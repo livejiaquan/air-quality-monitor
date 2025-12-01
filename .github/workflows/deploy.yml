@@ -15,16 +15,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create key.js
+      - name: Build and Deploy
         run: |
-          echo "export const API_KEY = '${{ secrets.API_KEY }}';" > js/key.js
+          # Create build directory
+          mkdir -p dist/js
+          mkdir -p dist/css
           
-          # Remove .gitignore so that the generated js/key.js is not ignored by the deploy action
-          rm .gitignore
+          # Copy assets
+          cp index.html dist/
+          cp -r css/* dist/css/
+          cp -r js/* dist/js/
+          
+          # Generate key.js directly in the build directory
+          echo "export const API_KEY = '${{ secrets.API_KEY }}';" > dist/js/key.js
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          exclude_assets: '.github, .gitignore, README.md'
+          publish_dir: ./dist
