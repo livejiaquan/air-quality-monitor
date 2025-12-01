@@ -65,3 +65,7 @@
 本專案使用環境部開放資料 API。由於是純前端靜態網頁，API Key 必須包含在前端程式碼中才能發送請求。這在開放資料應用中是常見且通常被允許的做法，但請勿將此架構用於需要高度安全性的私有 API 金鑰。
 
 API 設定位於 `js/config.js`。
+
+## 自動部署 (CI/CD)
+
+本專案使用 GitHub Actions 自動部署。每次 Push 到 `main` 分支時，會自動注入 API Key 並部署到 GitHub Pages。
