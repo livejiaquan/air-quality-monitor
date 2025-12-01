@@ -15,17 +15,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create config.js
+      - name: Create key.js
         run: |
-          echo "const CONFIG = {" > js/config.js
-          echo "    API_URL: 'https://data.moenv.gov.tw/api/v2/aqx_p_432'," >> js/config.js
-          echo "    API_KEY: '${{ secrets.API_KEY }}'" >> js/config.js
-          echo "};" >> js/config.js
-          echo "" >> js/config.js
-          echo "export default CONFIG;" >> js/config.js
-          
-          # Remove .gitignore so that the generated js/config.js is not ignored by the deploy action
-          rm .gitignore
+          echo "export const API_KEY = '${{ secrets.API_KEY }}';" > js/key.js
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

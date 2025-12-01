@@ -9,4 +9,5 @@ Thumbs.db
 node_modules/
 
 # Configuration
-js/config.js
+js/key.js
+
