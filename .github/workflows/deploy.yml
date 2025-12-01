@@ -23,6 +23,9 @@ jobs:
           echo "};" >> js/config.js
           echo "" >> js/config.js
           echo "export default CONFIG;" >> js/config.js
+          
+          # Remove .gitignore so that the generated js/config.js is not ignored by the deploy action
+          rm .gitignore
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
