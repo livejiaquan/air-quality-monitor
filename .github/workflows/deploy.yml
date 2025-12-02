@@ -28,6 +28,9 @@ jobs:
           
           # Generate key.js directly in the build directory
           echo "export const API_KEY = '${{ secrets.API_KEY }}';" > dist/js/key.js
+          
+          # CRITICAL: Remove .gitignore so that the generated key.js is NOT ignored by the deploy action
+          rm .gitignore
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
