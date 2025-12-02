@@ -26,14 +26,20 @@ jobs:
           cp -r css/* dist/css/
           cp -r js/* dist/js/
           
-          # Generate apikey.js with API_KEY from secrets
-          echo "export const API_KEY = '${{ secrets.API_KEY }}';" > dist/js/apikey.js
+          # Inject API_KEY directly into config.js (replace placeholder)
+          sed -i "s/__API_KEY_PLACEHOLDER__/${{ secrets.API_KEY }}/g" dist/js/config.js
+          
+          # Remove apikey.js from dist (not needed anymore)
+          rm -f dist/js/apikey.js
           
           # Verify files exist
           echo "=== Build directory contents ==="
           ls -la dist/
           ls -la dist/js/
-          ls -la dist/css/
+          
+          # Show config.js (with key hidden)
+          echo "=== config.js content (key hidden) ==="
+          cat dist/js/config.js | sed 's/API_KEY: .*/API_KEY: [HIDDEN]/g'
           
           # Add .nojekyll to prevent Jekyll processing
           touch dist/.nojekyll

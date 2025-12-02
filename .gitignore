@@ -9,5 +9,5 @@ Thumbs.db
 node_modules/
 
 # Configuration
-js/apikey.js
+# js/apikey.js (no longer needed - API key is injected into config.js during build)
 
