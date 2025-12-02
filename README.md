@@ -69,3 +69,4 @@ API 設定位於 `js/config.js`。
 ## 自動部署 (CI/CD)
 
 本專案使用 GitHub Actions 自動部署。每次 Push 到 `main` 分支時，會自動注入 API Key 並部署到 GitHub Pages。
+
