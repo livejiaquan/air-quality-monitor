@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and Deploy
+      - name: Build
         run: |
           # Create build directory
           mkdir -p dist/js
@@ -26,28 +26,21 @@ jobs:
           cp -r css/* dist/css/
           cp -r js/* dist/js/
           
-          # Generate key.js directly in the build directory
+          # Generate key.js with API_KEY from secrets
           echo "export const API_KEY = '${{ secrets.API_KEY }}';" > dist/js/key.js
           
-          # Debug: Check if API_KEY secret exists (only shows if empty)
-          if [ -z "${{ secrets.API_KEY }}" ]; then
-            echo "::error::API_KEY secret is empty or not set!"
-            exit 1
-          else
-            echo "API_KEY secret is set (length: ${#API_KEY_VALUE} chars)"
-          fi
+          # Verify files exist
+          echo "=== Build directory contents ==="
+          ls -la dist/
+          ls -la dist/js/
+          ls -la dist/css/
           
-          # Debug: Verify key.js was created correctly (without exposing the key)
-          echo "key.js content check:"
-          cat dist/js/key.js | sed 's/API_KEY = .*/API_KEY = [HIDDEN]/g'
-          
-          # CRITICAL: Remove .gitignore so that the generated key.js is NOT ignored by the deploy action
-          rm .gitignore
-        env:
-          API_KEY_VALUE: ${{ secrets.API_KEY }}
+          # Add .nojekyll to prevent Jekyll processing
+          touch dist/.nojekyll
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          force_orphan: true
