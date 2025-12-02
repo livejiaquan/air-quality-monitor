@@ -26,8 +26,8 @@ jobs:
           cp -r css/* dist/css/
           cp -r js/* dist/js/
           
-          # Generate key.js with API_KEY from secrets
-          echo "export const API_KEY = '${{ secrets.API_KEY }}';" > dist/js/key.js
+          # Generate apikey.js with API_KEY from secrets
+          echo "export const API_KEY = '${{ secrets.API_KEY }}';" > dist/js/apikey.js
           
           # Verify files exist
           echo "=== Build directory contents ==="

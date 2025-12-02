@@ -9,5 +9,5 @@ Thumbs.db
 node_modules/
 
 # Configuration
-js/key.js
+js/apikey.js
 
