@@ -2,8 +2,10 @@ import { getAQIStatus } from './api.js';
 
 let map = null;
 let markersLayer = null;
+let heatmapLayer = null;
 let lightTileLayer = null;
 let darkTileLayer = null;
+let heatmapEnabled = false;
 
 // Taiwan Center Coordinates
 const TAIWAN_CENTER = [23.6978, 120.9605];
@@ -88,6 +90,48 @@ export function updateMarkers(stations, onMarkerClick) {
 
         markersLayer.addLayer(marker);
     });
+}
+
+/**
+ * Toggles heatmap mode on/off.
+ * @param {Array} stations - Array of station objects.
+ * @param {boolean} enable
+ */
+export function toggleHeatmap(stations, enable) {
+    heatmapEnabled = enable;
+
+    if (enable) {
+        map.removeLayer(markersLayer);
+
+        const heatData = stations
+            .filter(s => s.latitude && s.longitude && s.aqi)
+            .map(s => [
+                parseFloat(s.latitude),
+                parseFloat(s.longitude),
+                Math.min(Math.max(parseInt(s.aqi) || 0, 0) / 300, 1)
+            ]);
+
+        if (heatmapLayer) map.removeLayer(heatmapLayer);
+
+        heatmapLayer = L.heatLayer(heatData, {
+            radius: 45,
+            blur: 30,
+            maxZoom: 10,
+            gradient: {
+                0.0: '#009866',
+                0.17: '#FFDE33',
+                0.33: '#FF9933',
+                0.5: '#CC0033',
+                0.8: '#660099'
+            }
+        }).addTo(map);
+    } else {
+        if (heatmapLayer) {
+            map.removeLayer(heatmapLayer);
+            heatmapLayer = null;
+        }
+        markersLayer.addTo(map);
+    }
 }
 
 /**

@@ -1,8 +1,9 @@
-import { getAQIStatus, getHealthAdvice } from './api.js';
-import { flyToCounty, setMapTheme, flyToStation } from './map.js';
-import { renderPollutantChart } from './charts.js';
+import { getAQIStatus, getHealthAdvice, fetchHistoricalData } from './api.js';
+import { flyToCounty, setMapTheme, flyToStation, toggleHeatmap } from './map.js';
+import { renderPollutantChart, renderHistoryChart } from './charts.js';
 
 let allStationsData = [];
+let heatmapActive = false;
 
 /**
  * Populates the county dropdown.
@@ -188,6 +189,20 @@ export function setupUIListeners(stations) {
         filterStationList(e.target.value);
     });
 
+    // Heatmap Toggle
+    const heatmapBtn = document.getElementById('heatmap-btn');
+    heatmapBtn.addEventListener('click', () => {
+        heatmapActive = !heatmapActive;
+        toggleHeatmap(allStationsData, heatmapActive);
+        if (heatmapActive) {
+            heatmapBtn.classList.add('bg-orange-500', 'text-white', 'border-orange-500');
+            heatmapBtn.classList.remove('bg-white', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-200', 'border-gray-200', 'dark:border-gray-600');
+        } else {
+            heatmapBtn.classList.remove('bg-orange-500', 'text-white', 'border-orange-500');
+            heatmapBtn.classList.add('bg-white', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-200', 'border-gray-200', 'dark:border-gray-600');
+        }
+    });
+
     // Pollutant Info Tooltips
     document.querySelectorAll('.info-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -197,6 +212,36 @@ export function setupUIListeners(stations) {
         });
     });
     // Geolocation is handled in main.js or map.js, but button is UI
+}
+
+/**
+ * Switches the details panel tab.
+ * @param {'current'|'history'} tab
+ */
+function switchPanelTab(tab) {
+    const currentTab = document.getElementById('panel-current-tab');
+    const historyTab = document.getElementById('panel-history-tab');
+    const currentBtn = document.getElementById('tab-current-btn');
+    const historyBtn = document.getElementById('tab-history-btn');
+
+    const activeClass = ['bg-white', 'dark:bg-gray-600', 'text-gray-800', 'dark:text-white', 'shadow-sm'];
+    const inactiveClass = ['text-gray-500', 'dark:text-gray-400'];
+
+    if (tab === 'current') {
+        currentTab.classList.remove('hidden');
+        historyTab.classList.add('hidden');
+        currentBtn.classList.add(...activeClass);
+        currentBtn.classList.remove(...inactiveClass);
+        historyBtn.classList.remove(...activeClass);
+        historyBtn.classList.add(...inactiveClass);
+    } else {
+        currentTab.classList.add('hidden');
+        historyTab.classList.remove('hidden');
+        historyBtn.classList.add(...activeClass);
+        historyBtn.classList.remove(...inactiveClass);
+        currentBtn.classList.remove(...activeClass);
+        currentBtn.classList.add(...inactiveClass);
+    }
 }
 
 /**
@@ -271,6 +316,25 @@ export function showStationDetails(station) {
 
     // Render Chart
     renderPollutantChart(station);
+
+    // Reset to current tab whenever a new station is selected
+    switchPanelTab('current');
+
+    // Tab listeners (re-bind each time to update station context)
+    document.getElementById('tab-current-btn').onclick = () => switchPanelTab('current');
+    document.getElementById('tab-history-btn').onclick = async () => {
+        switchPanelTab('history');
+        const loading = document.getElementById('history-loading');
+        loading.classList.remove('hidden');
+        const records = await fetchHistoricalData(station.sitename);
+        loading.classList.add('hidden');
+        if (records.length > 0) {
+            renderHistoryChart(records);
+        } else {
+            document.getElementById('history-chart-wrap').innerHTML =
+                '<p class="text-xs text-gray-400 text-center mt-16">無歷史資料</p>';
+        }
+    };
 
     // Show Panel
     panel.classList.remove('translate-y-full', 'translate-x-[120%]');

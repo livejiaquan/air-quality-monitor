@@ -88,6 +88,11 @@
                     title="測站列表">
                     <i class="fa-solid fa-list"></i>
                 </button>
+                <button id="heatmap-btn"
+                    class="p-2.5 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm"
+                    title="熱區地圖">
+                    <i class="fa-solid fa-fire"></i>
+                </button>
                 <button id="theme-toggle-btn"
                     class="p-2.5 bg-white dark:bg-gray-700 text-gray-600 dark:text-yellow-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm"
                     title="切換深色模式">
@@ -163,6 +168,20 @@
             </button>
         </div>
 
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+            <button id="tab-current-btn"
+                class="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm transition-all">
+                目前狀況
+            </button>
+            <button id="tab-history-btn"
+                class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all">
+                24hr 趨勢
+            </button>
+        </div>
+
+        <!-- Current Tab -->
+        <div id="panel-current-tab">
         <div class="flex items-center justify-between mb-6">
             <div id="panel-aqi-badge"
                 class="flex flex-col items-center justify-center w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white shadow-inner shrink-0 transition-colors">
@@ -255,6 +274,37 @@
         <div class="text-center mt-4">
             <span class="text-[10px] text-gray-400">資料來源：環境部開放資料平臺</span>
         </div>
+
+        </div><!-- end #panel-current-tab -->
+
+        <!-- History Tab -->
+        <div id="panel-history-tab" class="hidden">
+            <div class="mb-3">
+                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">過去 24 小時 PM2.5 趨勢</h3>
+                <p class="text-[10px] text-gray-400">單位：μg/m³</p>
+            </div>
+            <div id="history-chart-wrap" class="bg-white/50 dark:bg-gray-700/50 p-2 rounded-xl border border-gray-100 dark:border-gray-600 h-56 relative mb-4">
+                <canvas id="historyChart"></canvas>
+                <div id="history-loading" class="absolute inset-0 flex items-center justify-center hidden">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                </div>
+            </div>
+            <!-- PM2.5 level guide -->
+            <div class="grid grid-cols-3 gap-1 mb-4">
+                <div class="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
+                    <span class="w-2 h-2 rounded-full bg-[#009866] shrink-0"></span>良好 ≤15
+                </div>
+                <div class="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
+                    <span class="w-2 h-2 rounded-full bg-[#FFDE33] shrink-0"></span>普通 ≤35
+                </div>
+                <div class="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
+                    <span class="w-2 h-2 rounded-full bg-[#FF9933] shrink-0"></span>不佳 ≤54
+                </div>
+            </div>
+            <div class="text-center">
+                <span class="text-[10px] text-gray-400">資料來源：環境部開放資料平臺</span>
+            </div>
+        </div><!-- end #panel-history-tab -->
     </div>
 
     <!-- Loading Overlay -->
@@ -267,6 +317,9 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Leaflet Heat Plugin -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
     <!-- App Scripts -->
     <script type="module" src="js/main.js"></script>
