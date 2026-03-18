@@ -1,5 +1,7 @@
 import CONFIG from './config.js';
 
+const HISTORY_API_URL = 'https://data.moenv.gov.tw/api/v2/aqx_p_02';
+
 /**
  * Fetches AQI data from the MOENV API.
  * @returns {Promise<Array>} Array of station data objects.
@@ -22,6 +24,32 @@ export async function fetchAQIData() {
     } catch (error) {
         console.error('Error fetching AQI data:', error);
         throw error;
+    }
+}
+
+/**
+ * Fetches the last 24 hours of PM2.5 data for a specific station.
+ * @param {string} sitename - The station name (e.g. "基隆").
+ * @returns {Promise<Array>} Sorted array of hourly records.
+ */
+export async function fetchHistoricalData(sitename) {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const url = `${HISTORY_API_URL}?api_key=${CONFIG.API_KEY}&limit=24&filters=site,EQ,${encodeURIComponent(sitename)}`;
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        const records = Array.isArray(data) ? data : (data.records ?? []);
+
+        return records.sort((a, b) => new Date(a.datacreationdate) - new Date(b.datacreationdate));
+    } catch (error) {
+        console.error('Error fetching historical data:', error);
+        return [];
     }
 }
 
