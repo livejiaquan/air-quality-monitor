@@ -9,7 +9,7 @@ export async function fetchAQIData() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-        const url = `${CONFIG.API_URL}?api_key=${CONFIG.API_KEY}`;
+        const url = `${CONFIG.API_URL}?api_key=${CONFIG.API_KEY}&limit=1000&offset=0`;
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
 
