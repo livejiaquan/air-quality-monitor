@@ -17,7 +17,8 @@ export async function fetchAQIData() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        return data.records;
+        // API returns a direct array, not wrapped in a "records" field
+        return Array.isArray(data) ? data : data.records;
     } catch (error) {
         console.error('Error fetching AQI data:', error);
         throw error;
