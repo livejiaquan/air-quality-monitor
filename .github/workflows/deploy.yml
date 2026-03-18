@@ -27,7 +27,14 @@ jobs:
           cp -r js/* dist/js/
           
           # Inject API_KEY directly into config.js (replace placeholder)
-          sed -i "s/__API_KEY_PLACEHOLDER__/${{ secrets.API_KEY }}/g" dist/js/config.js
+          # Use | as delimiter to safely handle API keys that may contain /
+          sed -i "s|__API_KEY_PLACEHOLDER__|${{ secrets.API_KEY }}|g" dist/js/config.js
+
+          # Verify the placeholder was actually replaced
+          if grep -q "__API_KEY_PLACEHOLDER__" dist/js/config.js; then
+            echo "ERROR: API_KEY placeholder was NOT replaced! Check that secrets.API_KEY is set in repository settings."
+            exit 1
+          fi
           
           # Remove apikey.js from dist (not needed anymore)
           rm -f dist/js/apikey.js
