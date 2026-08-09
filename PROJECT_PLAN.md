@@ -1,173 +1,95 @@
-# Taiwan AQI Dashboard Project Plan
+# Product Mission and Evidence-led Roadmap
 
-## Product Goal
+更新：2026-08-10（Asia/Taipei）
 
-Build a polished public-data dashboard that answers four questions within 5 seconds:
+## Mission
 
-1. How is Taiwan's air quality right now?
-2. Which areas are worst?
-3. Which areas are safe?
-4. What should a normal user do today?
+> 讓台灣使用者不用安裝 App、登入或交出位置，就能在 5 秒內選定所在地，確認環境部 AQI、資料時間與一般／敏感族群活動提醒；資料不新鮮或不完整時，產品寧可停止下結論，也不把舊值包裝成今日建議。
 
-The app should feel like a sibling to the existing Taiwan reservoir dashboard: clear headline metrics, card-based public-data layout, semantic status colors, responsive sections, charts, rankings, and station detail cards. It should adapt the style for air quality instead of copying water-themed UI.
+這個 mission 取代「看全台最差地區與安全地區」的舊目標。全台最差站不是個人暴露，AQI 51–100 的「普通」也不等於對所有人安全。
 
-## Data Source And API Strategy
+## 2026-08-09 證據摘要
 
-Primary source: Taiwan Ministry of Environment open data dataset `AQX_P_432`, "Air Quality Index (AQI)".
+### 官方資料與風險
 
-- Dataset page: `https://data.moenv.gov.tw/dataset/detail/AQX_P_432`
-- API pattern: `https://data.moenv.gov.tw/api/v2/aqx_p_432?format=json&limit=1000&sort=ImportDate%20desc&api_key=...`
-- Fields used: `sitename`, `county`, `aqi`, `pollutant`, `status`, `so2`, `co`, `o3`, `o3_8hr`, `pm10`, `pm2.5`, `no2`, `publishtime`, `longitude`, `latitude`, `siteid`
-- Official update frequency: hourly.
-- API key: required by the MOENV data platform. The browser app must not embed the key.
+- 環境部 [AQX_P_432](https://data.moenv.gov.tw/dataset/detail/AQX_P_432) 是每小時 AQI 資料；官方 API 需要 key。[API 使用說明](https://data.moenv.gov.tw/paradigm)
+- [API 介接服務條款](https://data.moenv.gov.tw/api-term) 說明會員單一 API 每日 5,000 次、key 有效一年。因此共用 hourly cache 合理，但 key 必須有 owner 與輪替日。
+- 當晚官方 live snapshot 有 84 站；AQI 均有值，但 PM2.5 缺 3 站、PM10 缺 8 站、風速缺 4 站，且所有欄位皆為字串。缺值不能偷偷變成 0。
+- 無 key 的 API 回 HTTP 500 且 body 不是穩定的乾淨 JSON。不能以 status code 或 schema 假設取代 runtime validation。
+- 官方說明近兩年即時小時值只供參考；正式引用另有品保後年度資料。[即時值說明](https://airtw.moenv.gov.tw/cht/Query/InsValue.aspx)
+- 台灣 AQI 門檻自 2025-01-01 調整。[現行 AQI 與健康建議](https://airtw.moenv.gov.tw/CHT/Information/Standard/AirQualityIndicatorNew.aspx)
+- 開放資料可再利用但必須顯名，且提供機關不保證持續供應。[政府資料開放授權條款](https://data.gov.tw/license)
 
-Strategy:
+### 市場與使用者結果
 
-- Use a static JSON cache at `public/data/aqi-latest.json`.
-- Add a Node script to fetch official data with `MOENV_API_KEY`, normalize it, and write the static cache.
-- Add a checked-in sample/stale cache so the UI works locally without secrets.
-- Add GitHub Actions later to refresh the cache on a schedule when `MOENV_API_KEY` is configured.
-- The frontend fetches only the static cache file, keeping GitHub Pages deployment simple and avoiding client-side secret exposure.
+- 官方「環境即時通」已有定位、收藏、通知與三日預報。
+- 民間產品已有測站趨勢、變好／變壞提醒與 widgets。
+- 因此 generic map/dashboard 沒有足夠回訪理由。本產品的第一個差異是免安裝、免定位權限、trust-first 的所在地答案；第二個差異才是未來三日活動安排。
+- 上述需求是由官方健康建議與競品能力收斂出的產品假設，尚未被足量真實使用者研究證明。
 
-## Data Fetching, Caching, And Normalization
+## Product principles
 
-Normalization output shape:
+1. **所在地優先**：先手動選縣市／測站；不預設全台最差站就是使用者答案。
+2. **結論晚於可信度**：先顯示 source、發布時間、fresh/stale，再顯示活動提醒。
+3. **逐站 freshness**：一站新資料不能掩蓋其他過期站。
+4. **過期即停止**：sample、fallback、缺時間、超過 3 小時或未來時間異常均不提供「現在」結論。
+5. **分開受眾**：一般民眾與敏感族群建議不混寫；「普通」不稱為安全。
+6. **不洩漏 credential**：browser、cache、log、error 與 git 都不能有 API key。
+7. **可查核**：資料集、授權、發布時間、處理規則與非官方聲明必須可見。
+8. **不假裝精確**：stylized map 明示為示意；未取得站型／距離前不宣稱最近站代表住家。
 
-- `generatedAt`: cache generation timestamp.
-- `source`: source metadata and source URL.
-- `records`: normalized station records.
-- `summary`: national and county-level aggregates.
-- `warnings`: fetch or data-quality warnings.
+## Roadmap
 
-Station record fields:
+### P0 — Trust foundation（本分支）
 
-- identity: station id, station name, county.
-- AQI: numeric AQI, official status, main pollutant.
-- pollutant values: PM2.5, PM10, O3, O3 8hr, CO, SO2, NO2.
-- coordinates where available.
-- publish time and parsed timestamp.
-- derived AQI category, severity rank, color token, health suggestion.
+- Production cache schema、coverage、valid ratio、dedupe、AQI range、Taiwan time 與 freshness gate。
+- Atomic last-known-good promotion、error/key redaction、deploy-time sample rejection。
+- 前端逐站 freshness；過期站排除於摘要與結論。
+- 取消無行為的定位／熱點／圖層 controls；更新按鈕與 15 分鐘／重新可見時 refresh 有真實行為。
+- 手動縣市→測站流程；無預設「全台最差」建議。
+- 一般／敏感族群分開；AQI 51–100 不稱安全。
+- OGL attribution、非官方與即時資料用途聲明。
+- CI、Pages deployment workflow、sample production gate 與 custom-domain checklist。
 
-Caching behavior:
+### P1 — Useful return reason
 
-- Treat data as fresh when newest publish time is under 3 hours old.
-- Show stale warning when newest publish time is 3 or more hours old, or when only sample data is loaded.
-- Show partial-data warning when malformed station rows were dropped.
-- Preserve last successful static JSON during failed scheduled refreshes.
+- 接入 `AQF_P_01`，以最新 publishtime 驗證 10 空品區 × 3 日，明示「空品區預報」而非測站預報。
+- 接入測站基本資料，顯示站型、地址與代表性；在有證據後提供距離或選站理由。
+- Shareable stable station URL 與 local-only 常用地點；不要求帳號。
+- 保存可靠 hourly snapshots 後提供 12–24 小時趨勢，避免把單點噪音寫成因果。
+- 真實陌生使用者任務測試，驗證是否能在 5 秒內找到所在地、看懂時間與說出下一步。
 
-## Frontend Stack And Component Structure
+### P2 — Retention only after validation
 
-Stack:
+- PWA／compact home-screen view。
+- 只有在使用者研究證明需求後才評估 Web Push；不先複製既有 App 的通知功能。
+- 可觀測性 dashboard：last success、source age、record count、drop ratio、refresh failures、key expiry。
 
-- Vite
-- React
-- TypeScript
-- Tailwind CSS
-- Recharts
-- Vitest for data-normalization tests
-- GitHub Actions for cache refresh and deployment readiness
+## Public launch gates
 
-Component structure:
+所有條件同時成立才可把正式網域視為 production：
 
-- `src/App.tsx`: page shell and state orchestration.
-- `src/lib/aqi.ts`: parsing, category mapping, summaries, health suggestions.
-- `src/lib/data.ts`: static JSON fetch, validation, fallback handling.
-- `src/components/HeroSummary.tsx`: national headline, update time, stale warning, top action suggestion.
-- `src/components/MetricCard.tsx`: reusable dashboard stat card.
-- `src/components/AqiDistributionChart.tsx`: AQI category distribution.
-- `src/components/CountyRanking.tsx`: worst and safest county ranking.
-- `src/components/StationExplorer.tsx`: county/status filters and station detail grid.
-- `src/components/StationCard.tsx`: pollutant values and per-station advice.
-- `scripts/fetch-aqi.mjs`: official API fetch and static cache writer.
+- 本產品自己的 MOENV credential 已設定、owner／申請日／到期日前輪替責任清楚。
+- production artifact 不含 sample/fallback；deploy validator 實際通過。
+- 至少 72 小時 hourly refresh soak：無時間倒退、低覆蓋被拒、失敗保留 last-good、無 key/log 洩漏。
+- 320、390、tablet、desktop 實機流程通過；keyboard、screen reader names、focus、reduced motion 與非色彩唯一提示通過。
+- Loading、empty、initial error、refresh error、sample、全 stale、mixed stale、future timestamp 都經 browser 驗證。
+- Production build、artifact contents、relative base path、Pages deployment 與 rollback 可重現。
+- 無阻斷 console/log error；production dependency audit 無已知漏洞。
+- Metadata、attribution、privacy posture、custom domain DNS/HTTPS/canonical/OG/sitemap 均使用真實值。
+- 至少 5 位非開發者完成核心任務測試；若多數人仍先讀全台排行而找不到所在地，本產品不可宣稱達成 mission。
 
-## UI Layout And AQI Color System
+## Success metrics
 
-Layout:
+- **Core task success**：首次使用者能選所在地測站並正確說出 AQI、資料時間與適用族群提醒。
+- **Trust comprehension**：看到 stale/sample 狀態者不會回答「這就是現在 AQI」。
+- **Time to answer**：核心任務中位數 ≤ 5 秒是目標，先測量再宣稱。
+- **Data readiness**：正式環境 source age ≤ 3 小時、有效站數 ≥ 80 且涵蓋 22 個合法台灣縣市；任何 gate 不符則 readiness false。80／22 是依本輪 84 站 live snapshot 設定的初始 fail-closed 門檻，需用 72 小時觀測校正。
+- **Reliability**：72 小時 soak 期間，無不可信 cache promotion、無 credential exposure。
 
-1. Hero summary band with national status, average/max AQI, update time, and one practical activity recommendation.
-2. Metric cards for monitored stations, healthy stations, unhealthy stations, worst county, and primary pollutant.
-3. Two-column desktop dashboard: distribution chart and worst-area ranking.
-4. Safe-area strip showing counties/stations currently in good or moderate AQI.
-5. Station explorer with filters and dense detail cards.
-6. Data source footer with official links and disclaimer.
+## Explicit unknowns
 
-AQI colors follow the official category bands:
-
-- 0-50 Good: green
-- 51-100 Moderate: yellow
-- 101-150 Unhealthy for Sensitive Groups: orange
-- 151-200 Unhealthy: red
-- 201-300 Very Unhealthy: purple
-- 301-500 Hazardous: maroon
-- Missing/invalid: slate gray
-
-Visual adaptation from the reservoir reference:
-
-- Keep large readable statistics, soft card shadows, rounded corners, subtle gradients, and responsive grids.
-- Replace water iconography and blue-heavy palette with clean air/public-health cues: green/yellow/orange/red AQI semantics, light sky background, and restrained neutral surfaces.
-- Avoid copying the exact static HTML/CSS; implement a modern typed React component system.
-
-## Charts, Rankings, Filters, And Station Details
-
-Charts:
-
-- AQI category distribution bar chart.
-- County average AQI ranking chart or list, using worst station and station count as supporting context.
-
-Rankings:
-
-- Worst counties by max AQI, then average AQI.
-- Worst stations by AQI.
-- Safest counties/stations where AQI is good or moderate.
-
-Filters:
-
-- County select or segmented control.
-- AQI status/category segmented control.
-- Pollutant quick filter for PM2.5, PM10, O3, and all pollutants.
-
-Station details:
-
-- Station name, county, AQI badge, official status, main pollutant.
-- PM2.5, PM10, O3, CO, SO2, NO2 values.
-- Publish time and stale marker.
-- Health/activity suggestion for normal users and sensitive groups.
-
-## Loading, Error, Empty, And Stale States
-
-Loading:
-
-- Skeleton cards and chart placeholders with reserved dimensions.
-
-Error:
-
-- Recoverable fetch error shows a compact error panel with retry action.
-- Fatal parse error falls back to bundled sample if available and labels the data as sample/stale.
-
-Empty:
-
-- Empty station grid explains that no stations match current filters and offers a reset action.
-
-Stale/degraded:
-
-- Hero warning when data is older than 3 hours.
-- Source badge indicates live cache, sample cache, or fallback.
-- Partial-data warning if records were dropped during normalization.
-
-## Deployment And Review Checklist
-
-Deployment:
-
-- Static Vite build suitable for GitHub Pages.
-- Scheduled GitHub Action can refresh `public/data/aqi-latest.json` using `MOENV_API_KEY`.
-- README documents setup, data source, API key, refresh script, and deployment.
-
-Required verification before completion:
-
-- `npm run lint`
-- `npm run typecheck`
-- `npm run test`
-- `npm run build`
-- Browser inspection at desktop and mobile widths.
-- Confirm loading, error, empty, stale, and success states are implemented or demonstrable.
-
+- 正式 remote、GitHub Pages account/environment、網域與 MOENV credential 尚未提供。
+- 官方未提供可依賴的 SLA；3 小時 hard stop 是依 hourly cadence 制定的初始產品門檻，需以長期觀測校正。
+- 「最接近」與「最具代表性」可能不是同一站；在站型與使用者地點設計完成前不自動選站。
+- 5 秒 mission 尚未做足量真人測試，不是已證明成果。

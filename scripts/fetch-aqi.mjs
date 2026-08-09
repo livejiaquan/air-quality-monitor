@@ -1,53 +1,69 @@
-import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
+import { promoteAqiPayload } from './aqi-cache-contract.mjs';
 
-const API_KEY = process.env.MOENV_API_KEY;
 const ENDPOINT = 'https://data.moenv.gov.tw/api/v2/aqx_p_432';
-const OUTPUT = path.resolve('public/data/aqi-latest.json');
+const DEFAULT_OUTPUT = path.resolve('public/data/aqi-latest.json');
 
-if (!API_KEY) {
-  console.error('MOENV_API_KEY is required. Register at https://data.moenv.gov.tw/api_term and set the key as an environment variable.');
-  process.exit(1);
-}
-
-const url = new URL(ENDPOINT);
-url.searchParams.set('format', 'json');
-url.searchParams.set('limit', '1000');
-url.searchParams.set('sort', 'ImportDate desc');
-url.searchParams.set('api_key', API_KEY);
-
-const response = await fetch(url, {
-  headers: {
-    Accept: 'application/json',
-    'User-Agent': 'taiwan-aqi-dashboard/0.1.0'
+export async function fetchOfficialAqiPayload({ apiKey, fetchImpl = fetch } = {}) {
+  if (typeof apiKey !== 'string' || apiKey.trim() === '') {
+    throw new Error('MOENV_API_KEY is required.');
   }
-});
 
-if (!response.ok) {
-  throw new Error(`MOENV AQI request failed: HTTP ${response.status} ${response.statusText}`);
+  const requestUrl = new URL(ENDPOINT);
+  requestUrl.searchParams.set('format', 'json');
+  requestUrl.searchParams.set('limit', '1000');
+  requestUrl.searchParams.set('sort', 'ImportDate desc');
+  requestUrl.searchParams.set('api_key', apiKey.trim());
+
+  let response;
+  try {
+    response = await fetchImpl(requestUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'taiwan-aqi-dashboard/0.1.0'
+      }
+    });
+  } catch {
+    throw new Error('MOENV AQI request failed before receiving a response.');
+  }
+
+  if (!response?.ok) {
+    const status = Number.isInteger(response?.status) ? response.status : 'unknown';
+    throw new Error(`MOENV AQI request failed with HTTP status ${status}.`);
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    throw new Error('MOENV AQI response was not valid JSON.');
+  }
 }
 
-const payload = await response.json();
-const records = Array.isArray(payload.records) ? payload.records : Array.isArray(payload) ? payload : [];
-
-if (records.length === 0) {
-  throw new Error('MOENV AQI response contained no records.');
+export async function refreshAqiCache({
+  apiKey = process.env.MOENV_API_KEY,
+  outputPath = DEFAULT_OUTPUT,
+  fetchImpl = fetch,
+  ...validationOptions
+} = {}) {
+  const payload = await fetchOfficialAqiPayload({ apiKey, fetchImpl });
+  return promoteAqiPayload(payload, {
+    outputPath,
+    ...validationOptions
+  });
 }
 
-const cache = {
-  generatedAt: new Date().toISOString(),
-  source: {
-    kind: 'official-cache',
-    dataset: 'AQX_P_432',
-    url: 'https://data.moenv.gov.tw/dataset/detail/AQX_P_432'
-  },
-  warnings: [],
-  records
-};
+async function main() {
+  const result = await refreshAqiCache();
+  console.log(`Promoted ${result.recordCount} validated AQI records to the production cache.`);
+}
 
-await mkdir(path.dirname(OUTPUT), { recursive: true });
-await writeFile(OUTPUT, `${JSON.stringify(cache, null, 2)}\n`, 'utf8');
-
-console.log(`Wrote ${records.length} AQI records to ${OUTPUT}`);
-
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main().catch((error) => {
+    const message = error instanceof Error ? error.message : 'AQI cache refresh failed.';
+    console.error(message);
+    process.exitCode = 1;
+  });
+}

@@ -49,7 +49,7 @@ export async function loadAqiDataset(mode: DemoMode = getDemoMode()): Promise<Aq
     {
       generatedAt: cache.generatedAt,
       nowISO: new Date().toISOString(),
-      sourceKind: cache.source?.kind ?? 'official-cache',
+      sourceKind: parseSourceKind(cache.source?.kind),
       sourceUrl: cache.source?.url
     }
   );
@@ -58,6 +58,11 @@ export async function loadAqiDataset(mode: DemoMode = getDemoMode()): Promise<Aq
     ...dataset,
     warnings: [...(Array.isArray(cache.warnings) ? cache.warnings : []), ...dataset.warnings]
   };
+}
+
+function parseSourceKind(value: unknown): SourceKind {
+  if (value === 'official-cache' || value === 'sample' || value === 'fallback') return value;
+  return 'fallback';
 }
 
 export function getDemoMode(search = window.location.search): DemoMode {

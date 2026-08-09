@@ -47,6 +47,9 @@ export type AqiStationRecord = {
   pollutantValues: PollutantValues;
   publishTime: string;
   publishTimeISO: string | null;
+  hoursSinceUpdate: number | null;
+  isStale: boolean;
+  hasFutureTimestamp: boolean;
   longitude: number | null;
   latitude: number | null;
   categoryId: AqiCategoryId;
@@ -70,10 +73,14 @@ export type Freshness = {
   newestPublishTimeISO: string | null;
   hoursSinceUpdate: number | null;
   isStale: boolean;
+  hasFutureTimestamp: boolean;
 };
 
 export type AqiSummary = Freshness & {
   stationCount: number;
+  currentStationCount: number;
+  staleStationCount: number;
+  futureTimestampCount: number;
   validAqiCount: number;
   averageAqi: number | null;
   medianAqi: number | null;
@@ -108,7 +115,10 @@ export type NormalizeOptions = {
 
 const SOURCE_URL = 'https://data.moenv.gov.tw/dataset/detail/AQX_P_432';
 const STALE_THRESHOLD_HOURS = 3;
+const FUTURE_TIMESTAMP_TOLERANCE_HOURS = 0.25;
 
+// Paraphrased from the MOENV AQI health guidance effective 2025-01-01.
+// Keep the audience split and key safeguards in sync with the official table.
 export const AQI_CATEGORIES: AqiCategory[] = [
   {
     id: 'good',
@@ -122,9 +132,9 @@ export const AQI_CATEGORIES: AqiCategory[] = [
     textClass: 'text-emerald-800',
     borderClass: 'border-emerald-200',
     advice: {
-      general: '空氣品質良好，適合一般戶外活動。',
-      sensitive: '敏感族群可正常活動，留意自身狀況即可。',
-      short: '適合戶外活動'
+      general: '一般民眾可正常進行戶外活動。',
+      sensitive: '敏感族群可正常進行戶外活動。',
+      short: '正常戶外活動'
     }
   },
   {
@@ -139,9 +149,9 @@ export const AQI_CATEGORIES: AqiCategory[] = [
     textClass: 'text-amber-900',
     borderClass: 'border-amber-200',
     advice: {
-      general: '一般民眾可正常活動，極少數敏感者留意症狀。',
-      sensitive: '敏感族群若出現咳嗽、眼痛或喉嚨不適，減少長時間戶外活動。',
-      short: '一般活動可照常'
+      general: '一般民眾可正常進行戶外活動。',
+      sensitive: '極特殊敏感族群留意咳嗽或呼吸急促；仍可正常進行戶外活動。',
+      short: '正常戶外活動'
     }
   },
   {
@@ -156,8 +166,8 @@ export const AQI_CATEGORIES: AqiCategory[] = [
     textClass: 'text-orange-900',
     borderClass: 'border-orange-200',
     advice: {
-      general: '一般民眾若不適可減少戶外活動，學生減少長時間劇烈運動。',
-      sensitive: '敏感族群應降低戶外活動強度，必要時改到室內。',
+      general: '若有眼痛、咳嗽或喉嚨痛等不適，考慮減少戶外活動；學生減少長時間劇烈運動。',
+      sensitive: '心臟、呼吸道或心血管疾病者、孩童及老年人，減少體力消耗與戶外活動，必要外出配戴口罩；氣喘者可能需依醫囑增加吸入劑使用。',
       short: '敏感族群減量'
     }
   },
@@ -173,9 +183,9 @@ export const AQI_CATEGORIES: AqiCategory[] = [
     textClass: 'text-red-900',
     borderClass: 'border-red-200',
     advice: {
-      general: '減少戶外體力消耗，戶外活動增加休息時間。',
-      sensitive: '敏感族群應避免長時間戶外活動，學生避免劇烈運動。',
-      short: '減少戶外耗氧活動'
+      general: '若有不適，減少體力消耗，特別是戶外活動；學生避免長時間劇烈運動並增加休息。',
+      sensitive: '心臟、呼吸道或心血管疾病者、孩童及老年人，留在室內並減少體力消耗，必要外出配戴口罩；氣喘者可能需依醫囑增加吸入劑使用。',
+      short: '所有族群減少戶外活動'
     }
   },
   {
@@ -190,9 +200,9 @@ export const AQI_CATEGORIES: AqiCategory[] = [
     textClass: 'text-purple-900',
     borderClass: 'border-purple-200',
     advice: {
-      general: '所有人應減少戶外活動，必要外出請做好防護。',
-      sensitive: '敏感族群與學生應停止戶外劇烈活動並轉入室內。',
-      short: '改以室內活動為主'
+      general: '一般民眾減少戶外活動；學生立即停止戶外活動，將課程調整至室內。',
+      sensitive: '心臟、呼吸道或心血管疾病者、孩童及老年人應留在室內、減少體力消耗，必要外出配戴口罩；氣喘者依醫囑調整吸入劑使用。',
+      short: '減少戶外活動'
     }
   },
   {
@@ -207,8 +217,8 @@ export const AQI_CATEGORIES: AqiCategory[] = [
     textClass: 'text-rose-950',
     borderClass: 'border-rose-300',
     advice: {
-      general: '避免戶外活動，必要外出配戴口罩並縮短停留時間。',
-      sensitive: '敏感族群應留在室內並緊閉門窗，依醫囑備妥藥物。',
+      general: '一般民眾避免戶外活動、室內緊閉門窗，必要外出配戴口罩；學生立即停止戶外活動。',
+      sensitive: '心臟、呼吸道或心血管疾病者、孩童及老年人應留在室內、避免體力消耗，必要外出配戴口罩；氣喘者依醫囑調整吸入劑使用。',
       short: '避免戶外活動'
     }
   },
@@ -248,15 +258,21 @@ export function getAqiCategory(aqi: number | null | undefined): AqiCategory {
 
 export function normalizeAqiPayload(payload: unknown, options: NormalizeOptions = {}): AqiDataset {
   const generatedAt = options.generatedAt ?? new Date().toISOString();
+  const nowISO = options.nowISO ?? generatedAt;
   const rows = extractRows(payload);
   const warnings: string[] = [];
   const records: AqiStationRecord[] = [];
+  const seenSiteIds = new Set<string>();
   let droppedRows = 0;
+  let duplicateRows = 0;
 
   for (const row of rows) {
-    const record = normalizeRow(row);
-    if (record) {
+    const record = normalizeRow(row, nowISO);
+    if (record && !seenSiteIds.has(record.siteId)) {
+      seenSiteIds.add(record.siteId);
       records.push(record);
+    } else if (record) {
+      duplicateRows += 1;
     } else {
       droppedRows += 1;
     }
@@ -265,13 +281,16 @@ export function normalizeAqiPayload(payload: unknown, options: NormalizeOptions 
   if (droppedRows > 0) {
     warnings.push(`Dropped ${droppedRows} malformed station row${droppedRows === 1 ? '' : 's'}.`);
   }
+  if (duplicateRows > 0) {
+    warnings.push(`Dropped ${duplicateRows} duplicate station row${duplicateRows === 1 ? '' : 's'}.`);
+  }
 
-  const summary = summarizeAqiDataset(records, options.nowISO ?? generatedAt);
+  const summary = summarizeAqiDataset(records, nowISO);
 
   return {
     generatedAt,
     source: {
-      kind: options.sourceKind ?? 'official-cache',
+      kind: options.sourceKind ?? 'fallback',
       dataset: 'AQX_P_432',
       url: options.sourceUrl ?? SOURCE_URL
     },
@@ -282,15 +301,22 @@ export function normalizeAqiPayload(payload: unknown, options: NormalizeOptions 
 }
 
 export function summarizeAqiDataset(records: AqiStationRecord[], nowISO = new Date().toISOString()): AqiSummary {
-  const sortedByWorst = [...records].sort((a, b) => b.aqi - a.aqi);
-  const sortedBySafest = [...records].sort((a, b) => a.aqi - b.aqi);
+  const recordsWithFreshness = records.map((record) => ({
+    record,
+    freshness: getFreshness(record.publishTimeISO, nowISO)
+  }));
+  const currentRecords = recordsWithFreshness
+    .filter(({ freshness }) => !freshness.isStale)
+    .map(({ record }) => record);
+  const sortedByWorst = [...currentRecords].sort((a, b) => b.aqi - a.aqi);
+  const sortedBySafest = [...currentRecords].sort((a, b) => a.aqi - b.aqi);
   const aqis = sortedBySafest.map((record) => record.aqi);
   const averageAqi = aqis.length > 0 ? round(aqis.reduce((sum, aqi) => sum + aqi, 0) / aqis.length, 1) : null;
   const medianAqi = getMedian(aqis);
   const categoryCounts = createEmptyCategoryCounts();
   const pollutantCounts = new Map<string, number>();
 
-  for (const record of records) {
+  for (const record of currentRecords) {
     categoryCounts[record.categoryId] += 1;
     const pollutant = normalizePollutantLabel(record.mainPollutant);
     if (pollutant) {
@@ -299,27 +325,63 @@ export function summarizeAqiDataset(records: AqiStationRecord[], nowISO = new Da
   }
 
   const newestRecord = [...records]
-    .filter((record) => record.publishTimeISO)
+    .filter(
+      (record) =>
+        record.publishTimeISO &&
+        Number.isFinite(Date.parse(record.publishTimeISO)) &&
+        !getFreshness(record.publishTimeISO, nowISO).hasFutureTimestamp
+    )
     .sort((a, b) => Date.parse(b.publishTimeISO!) - Date.parse(a.publishTimeISO!))[0];
-  const freshness = getFreshness(newestRecord?.publishTimeISO ?? null, nowISO);
+  const newestFreshness = getFreshness(newestRecord?.publishTimeISO ?? null, nowISO);
+  const staleStationCount = recordsWithFreshness.filter(({ freshness }) => freshness.isStale).length;
+  const futureTimestampCount = recordsWithFreshness.filter(({ freshness }) => freshness.hasFutureTimestamp).length;
+  const freshness: Freshness = {
+    ...newestFreshness,
+    isStale: currentRecords.length === 0,
+    hasFutureTimestamp: futureTimestampCount > 0
+  };
 
   return {
     ...freshness,
     newestPublishTime: newestRecord?.publishTime ?? null,
     stationCount: records.length,
-    validAqiCount: records.length,
+    currentStationCount: currentRecords.length,
+    staleStationCount,
+    futureTimestampCount,
+    validAqiCount: currentRecords.length,
     averageAqi,
     medianAqi,
-    healthyStationCount: records.filter((record) => record.aqi <= 100).length,
-    unhealthyStationCount: records.filter((record) => record.aqi > 100).length,
+    healthyStationCount: currentRecords.filter((record) => record.aqi <= 100).length,
+    unhealthyStationCount: currentRecords.filter((record) => record.aqi > 100).length,
     worstStation: sortedByWorst[0] ?? null,
     safestStations: sortedBySafest.filter((record) => record.aqi <= 100).slice(0, 6),
     worstStations: sortedByWorst.slice(0, 8),
-    counties: summarizeCounties(records),
+    counties: summarizeCounties(currentRecords),
     categoryCounts,
     primaryPollutants: [...pollutantCounts.entries()]
       .map(([pollutant, count]) => ({ pollutant, count }))
       .sort((a, b) => b.count - a.count || a.pollutant.localeCompare(b.pollutant, 'zh-Hant'))
+  };
+}
+
+export function recomputeAqiDatasetFreshness(
+  dataset: AqiDataset,
+  nowISO = new Date().toISOString()
+): AqiDataset {
+  const records = dataset.records.map((record) => {
+    const freshness = getFreshness(record.publishTimeISO, nowISO);
+    return {
+      ...record,
+      hoursSinceUpdate: freshness.hoursSinceUpdate,
+      isStale: freshness.isStale,
+      hasFutureTimestamp: freshness.hasFutureTimestamp
+    };
+  });
+
+  return {
+    ...dataset,
+    records,
+    summary: summarizeAqiDataset(records, nowISO)
   };
 }
 
@@ -332,7 +394,8 @@ export function getFreshness(
       newestPublishTime: null,
       newestPublishTimeISO: null,
       hoursSinceUpdate: null,
-      isStale: true
+      isStale: true,
+      hasFutureTimestamp: false
     };
   }
 
@@ -343,17 +406,20 @@ export function getFreshness(
       newestPublishTime: null,
       newestPublishTimeISO: null,
       hoursSinceUpdate: null,
-      isStale: true
+      isStale: true,
+      hasFutureTimestamp: false
     };
   }
 
   const hoursSinceUpdate = (now - published) / 1000 / 60 / 60;
+  const hasFutureTimestamp = hoursSinceUpdate < -FUTURE_TIMESTAMP_TOLERANCE_HOURS;
 
   return {
     newestPublishTime: formatTaiwanDate(newestPublishTimeISO),
     newestPublishTimeISO,
     hoursSinceUpdate: round(Math.max(0, hoursSinceUpdate), 2),
-    isStale: hoursSinceUpdate >= STALE_THRESHOLD_HOURS
+    isStale: hasFutureTimestamp || hoursSinceUpdate >= STALE_THRESHOLD_HOURS,
+    hasFutureTimestamp
   };
 }
 
@@ -371,7 +437,7 @@ function extractRows(payload: unknown): unknown[] {
   return [];
 }
 
-function normalizeRow(row: unknown): AqiStationRecord | null {
+function normalizeRow(row: unknown, nowISO: string): AqiStationRecord | null {
   if (!row || typeof row !== 'object') return null;
 
   const data = row as Record<string, unknown>;
@@ -379,12 +445,13 @@ function normalizeRow(row: unknown): AqiStationRecord | null {
   const county = getString(data, ['county', 'County']);
   const aqi = parseNumber(getValue(data, ['aqi', 'AQI']));
 
-  if (!stationName || !county || aqi === null) {
+  if (!stationName || !county || aqi === null || aqi < 0 || aqi > 500) {
     return null;
   }
 
   const publishTime = getString(data, ['publishtime', 'PublishTime', 'publishtime']);
   const publishTimeISO = parseTaiwanDate(publishTime);
+  const freshness = getFreshness(publishTimeISO, nowISO);
   const category = getAqiCategory(aqi);
 
   return {
@@ -405,6 +472,9 @@ function normalizeRow(row: unknown): AqiStationRecord | null {
     },
     publishTime,
     publishTimeISO,
+    hoursSinceUpdate: freshness.hoursSinceUpdate,
+    isStale: freshness.isStale,
+    hasFutureTimestamp: freshness.hasFutureTimestamp,
     longitude: parseNumber(getValue(data, ['longitude', 'Longitude'])),
     latitude: parseNumber(getValue(data, ['latitude', 'Latitude'])),
     categoryId: category.id,
@@ -444,6 +514,33 @@ function parseTaiwanDate(value: string): string | null {
 
   if (dateTimeMatch) {
     const [, year, month, day, hour, minute, second = '00'] = dateTimeMatch;
+    const yearNumber = Number(year);
+    const monthNumber = Number(month);
+    const dayNumber = Number(day);
+    const hourNumber = Number(hour);
+    const minuteNumber = Number(minute);
+    const secondNumber = Number(second);
+    const utcMs = Date.UTC(
+      yearNumber,
+      monthNumber - 1,
+      dayNumber,
+      hourNumber - 8,
+      minuteNumber,
+      secondNumber
+    );
+    const taiwanDate = new Date(utcMs + 8 * 60 * 60 * 1000);
+
+    if (
+      taiwanDate.getUTCFullYear() !== yearNumber ||
+      taiwanDate.getUTCMonth() !== monthNumber - 1 ||
+      taiwanDate.getUTCDate() !== dayNumber ||
+      taiwanDate.getUTCHours() !== hourNumber ||
+      taiwanDate.getUTCMinutes() !== minuteNumber ||
+      taiwanDate.getUTCSeconds() !== secondNumber
+    ) {
+      return null;
+    }
+
     return `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:${pad(second)}+08:00`;
   }
 

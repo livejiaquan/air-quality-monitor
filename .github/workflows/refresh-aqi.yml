@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: refresh-aqi-cache
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -15,32 +19,32 @@ jobs:
       MOENV_API_KEY: ${{ secrets.MOENV_API_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Stop when API key is not configured
-        if: env.MOENV_API_KEY == ''
+      - name: Require production API key
         run: |
-          echo "MOENV_API_KEY secret is not configured; keeping existing cache."
+          if [ -z "$MOENV_API_KEY" ]; then
+            echo "::error::MOENV_API_KEY is not configured; the last-good cache was left unchanged."
+            exit 1
+          fi
 
       - name: Setup Node
-        if: env.MOENV_API_KEY != ''
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        if: env.MOENV_API_KEY != ''
         run: npm ci
 
       - name: Fetch official AQI cache
-        if: env.MOENV_API_KEY != ''
         run: npm run fetch:aqi
 
+      - name: Validate promoted production cache
+        run: npm run validate:aqi
+
       - name: Commit updated cache
-        if: env.MOENV_API_KEY != ''
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore: refresh AQI cache'
           file_pattern: public/data/aqi-latest.json
-

@@ -11,7 +11,9 @@ export function formatNumber(value: number | null | undefined, digits = 0): stri
 export function formatHours(value: number | null | undefined): string {
   if (typeof value !== 'number' || Number.isNaN(value)) return '未知';
   if (value < 1) return '1 小時內';
-  return `${formatNumber(value, value < 10 ? 1 : 0)} 小時前`;
+  if (value >= 48) return `${Math.floor(value / 24)} 天前`;
+  if (value < 10) return `${formatNumber(Math.floor(value * 10) / 10, 1)} 小時前`;
+  return `${Math.floor(value)} 小時前`;
 }
 
 export function getDominantPollutant(stations: AqiStationRecord[]): string {
@@ -23,4 +25,3 @@ export function getDominantPollutant(stations: AqiStationRecord[]): string {
 
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'))[0]?.[0] ?? '無明顯污染物';
 }
-

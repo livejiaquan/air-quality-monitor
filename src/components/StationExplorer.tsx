@@ -5,6 +5,7 @@ import { StationCard } from './StationCard';
 
 type StationExplorerProps = {
   stations: AqiStationRecord[];
+  canShowCurrentAdvice: boolean;
 };
 
 const categoryOptions: Array<{ id: AqiCategoryId | 'all'; label: string }> = [
@@ -15,10 +16,13 @@ const categoryOptions: Array<{ id: AqiCategoryId | 'all'; label: string }> = [
   }))
 ];
 
-export function StationExplorer({ stations }: StationExplorerProps) {
+const STATIONS_PER_PAGE = 24;
+
+export function StationExplorer({ stations, canShowCurrentAdvice }: StationExplorerProps) {
   const [county, setCounty] = useState('all');
   const [category, setCategory] = useState<AqiCategoryId | 'all'>('all');
   const [query, setQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(STATIONS_PER_PAGE);
 
   const counties = useMemo(() => ['all', ...new Set(stations.map((station) => station.county).sort((a, b) => a.localeCompare(b, 'zh-Hant')))], [stations]);
   const filteredStations = useMemo(() => {
@@ -32,11 +36,14 @@ export function StationExplorer({ stations }: StationExplorerProps) {
       })
       .sort((a, b) => b.aqi - a.aqi);
   }, [category, county, query, stations]);
+  const visibleStations = filteredStations.slice(0, visibleCount);
+  const remainingStationCount = filteredStations.length - visibleStations.length;
 
   const reset = () => {
     setCounty('all');
     setCategory('all');
     setQuery('');
+    setVisibleCount(STATIONS_PER_PAGE);
   };
 
   return (
@@ -51,8 +58,13 @@ export function StationExplorer({ stations }: StationExplorerProps) {
           <label className="block">
             <span className="sr-only">縣市篩選</span>
             <select
+              name="explorer-county"
+              autoComplete="off"
               value={county}
-              onChange={(event) => setCounty(event.target.value)}
+              onChange={(event) => {
+                setCounty(event.target.value);
+                setVisibleCount(STATIONS_PER_PAGE);
+              }}
               className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800"
             >
               {counties.map((item) => (
@@ -65,8 +77,13 @@ export function StationExplorer({ stations }: StationExplorerProps) {
           <label className="block">
             <span className="sr-only">AQI 狀態篩選</span>
             <select
+              name="explorer-category"
+              autoComplete="off"
               value={category}
-              onChange={(event) => setCategory(event.target.value as AqiCategoryId | 'all')}
+              onChange={(event) => {
+                setCategory(event.target.value as AqiCategoryId | 'all');
+                setVisibleCount(STATIONS_PER_PAGE);
+              }}
               className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800"
             >
               {categoryOptions.map((item) => (
@@ -80,9 +97,15 @@ export function StationExplorer({ stations }: StationExplorerProps) {
             <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
             <span className="sr-only">搜尋測站</span>
             <input
+              type="search"
+              name="station-search"
+              autoComplete="off"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜尋測站、縣市、污染物"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setVisibleCount(STATIONS_PER_PAGE);
+              }}
+              placeholder="搜尋測站、縣市、污染物…"
               className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm font-medium text-slate-800 placeholder:text-slate-400"
             />
           </label>
@@ -91,7 +114,8 @@ export function StationExplorer({ stations }: StationExplorerProps) {
 
       <div className="mt-5 flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
         <p className="text-sm text-slate-500">
-          顯示 <span className="font-bold text-slate-900">{filteredStations.length}</span> / {stations.length} 個測站
+          顯示 <span className="font-bold text-slate-900">{visibleStations.length}</span> / {filteredStations.length} 個符合測站
+          <span className="sr-only">；全資料共 {stations.length} 個測站</span>
         </p>
         <button
           type="button"
@@ -117,13 +141,25 @@ export function StationExplorer({ stations }: StationExplorerProps) {
           </button>
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredStations.map((station) => (
-            <StationCard key={station.siteId} station={station} />
-          ))}
-        </div>
+        <>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {visibleStations.map((station) => (
+              <StationCard key={station.siteId} station={station} canShowCurrentAdvice={canShowCurrentAdvice} />
+            ))}
+          </div>
+          {remainingStationCount > 0 ? (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((count) => count + STATIONS_PER_PAGE)}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+              >
+                顯示更多測站（剩餘 {remainingStationCount}）
+              </button>
+            </div>
+          ) : null}
+        </>
       )}
     </section>
   );
 }
-

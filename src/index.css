@@ -19,10 +19,23 @@ body {
   min-width: 320px;
 }
 
+h1,
+h2 {
+  text-wrap: balance;
+}
+
 button,
 input,
 select {
   font: inherit;
+}
+
+button,
+a,
+input,
+select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgb(15 118 110 / 0.18);
 }
 
 .air-map-grid {
@@ -63,6 +76,10 @@ select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .air-map-marker {
+    transition: none;
+  }
+
   .air-map-marker-risk::after {
     animation: none;
   }

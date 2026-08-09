@@ -1,0 +1,80 @@
+name: Deploy Production Site
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  workflow_run:
+    workflows:
+      - Refresh AQI Cache
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch) ||
+      (github.event_name != 'workflow_run' &&
+      github.ref_name == github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout triggering branch
+        if: github.event_name != 'workflow_run'
+        uses: actions/checkout@v7
+
+      - name: Checkout refreshed default branch
+        if: github.event_name == 'workflow_run'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refuse sample, fallback, incomplete, or stale AQI data
+        run: npm run validate:aqi
+
+      - name: Verify application
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload production artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

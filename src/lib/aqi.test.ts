@@ -3,6 +3,7 @@ import {
   getAqiCategory,
   getFreshness,
   normalizeAqiPayload,
+  recomputeAqiDatasetFreshness,
   summarizeAqiDataset
 } from './aqi';
 
@@ -79,6 +80,15 @@ describe('AQI categories', () => {
     expect(getAqiCategory(301).id).toBe('hazardous');
     expect(getAqiCategory(null).id).toBe('unknown');
   });
+
+  it('preserves key safeguards from the current MOENV audience guidance', () => {
+    expect(getAqiCategory(75).advice.sensitive).toContain('仍可正常進行戶外活動');
+    expect(getAqiCategory(125).advice.general).toContain('學生減少長時間劇烈運動');
+    expect(getAqiCategory(125).advice.sensitive).toContain('必要外出配戴口罩');
+    expect(getAqiCategory(175).advice.sensitive).toContain('留在室內並減少體力消耗');
+    expect(getAqiCategory(250).advice.general).toContain('學生立即停止戶外活動');
+    expect(getAqiCategory(350).advice.general).toContain('室內緊閉門窗');
+  });
 });
 
 describe('AQI normalization', () => {
@@ -97,6 +107,7 @@ describe('AQI normalization', () => {
       county: '雲林縣',
       aqi: 156,
       categoryId: 'unhealthy',
+      isStale: false,
       mainPollutant: 'PM2.5',
       pollutantValues: {
         pm25: 58,
@@ -119,6 +130,8 @@ describe('AQI normalization', () => {
     const summary = summarizeAqiDataset(dataset.records, '2026-05-30T02:10:00.000Z');
 
     expect(summary.stationCount).toBe(3);
+    expect(summary.currentStationCount).toBe(3);
+    expect(summary.staleStationCount).toBe(0);
     expect(summary.healthyStationCount).toBe(2);
     expect(summary.unhealthyStationCount).toBe(1);
     expect(summary.worstStation?.stationName).toBe('麥寮');
@@ -132,11 +145,95 @@ describe('AQI normalization', () => {
 
   it('marks hourly official data stale after three hours', () => {
     const fresh = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-30T02:59:00.000Z');
+    const exactBoundary = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-30T04:00:00.000Z');
     const stale = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-30T04:01:00.000Z');
 
     expect(fresh.isStale).toBe(false);
+    expect(exactBoundary.isStale).toBe(true);
     expect(stale.isStale).toBe(true);
     expect(stale.hoursSinceUpdate).toBeCloseTo(3.02, 2);
   });
-});
 
+  it('excludes stale stations from current advice and rankings', () => {
+    const dataset = normalizeAqiPayload(
+      {
+        records: [
+          { ...rawRecords[0], aqi: '180', publishtime: '2026/05/29 09:00:00' },
+          { ...rawRecords[1], aqi: '40', publishtime: '2026/05/30 09:00:00' }
+        ]
+      },
+      {
+        nowISO: '2026-05-30T10:00:00+08:00',
+        sourceKind: 'official-cache'
+      }
+    );
+
+    expect(dataset.summary.stationCount).toBe(2);
+    expect(dataset.summary.currentStationCount).toBe(1);
+    expect(dataset.summary.staleStationCount).toBe(1);
+    expect(dataset.summary.worstStation?.stationName).toBe('臺東');
+    expect(dataset.records.find((record) => record.stationName === '麥寮')?.isStale).toBe(true);
+  });
+
+  it('recomputes a loaded dataset when time crosses the hard freshness limit', () => {
+    const dataset = normalizeAqiPayload(
+      { records: [{ ...rawRecords[0], publishtime: '2026/05/30 09:00:00' }] },
+      { nowISO: '2026-05-30T11:59:00+08:00', sourceKind: 'official-cache' }
+    );
+
+    expect(dataset.summary.currentStationCount).toBe(1);
+
+    const agedDataset = recomputeAqiDatasetFreshness(dataset, '2026-05-30T12:00:00+08:00');
+
+    expect(agedDataset.records[0]).toMatchObject({ isStale: true, hoursSinceUpdate: 3 });
+    expect(agedDataset.summary.currentStationCount).toBe(0);
+    expect(agedDataset.summary.worstStation).toBeNull();
+  });
+
+  it('rejects impossible AQI values and treats future timestamps as stale', () => {
+    const dataset = normalizeAqiPayload(
+      {
+        records: [
+          { ...rawRecords[0], siteid: 'negative', aqi: '-1' },
+          { ...rawRecords[1], siteid: 'too-high', aqi: '501' },
+          { ...rawRecords[2], siteid: 'future', publishtime: '2026/05/30 12:00:00' }
+        ]
+      },
+      {
+        nowISO: '2026-05-30T10:00:00+08:00',
+        sourceKind: 'official-cache'
+      }
+    );
+
+    expect(dataset.records).toHaveLength(1);
+    expect(dataset.records[0]).toMatchObject({
+      siteId: 'future',
+      isStale: true,
+      hasFutureTimestamp: true
+    });
+    expect(dataset.summary.currentStationCount).toBe(0);
+    expect(dataset.summary.futureTimestampCount).toBe(1);
+    expect(dataset.warnings).toContain('Dropped 2 malformed station rows.');
+  });
+
+  it('rejects impossible dates and drops duplicate station ids before summarizing', () => {
+    const dataset = normalizeAqiPayload(
+      {
+        records: [
+          { ...rawRecords[0], siteid: 'duplicate', publishtime: '2026/02/30 09:00:00' },
+          { ...rawRecords[1], siteid: 'duplicate', publishtime: '2026/05/30 09:00:00' },
+          { ...rawRecords[2], siteid: 'duplicate', publishtime: '2026/05/30 09:00:00' }
+        ]
+      },
+      {
+        nowISO: '2026-05-30T10:00:00+08:00',
+        sourceKind: 'official-cache'
+      }
+    );
+
+    expect(dataset.records).toHaveLength(1);
+    expect(dataset.records[0]).toMatchObject({ stationName: '麥寮', isStale: true });
+    expect(dataset.summary.currentStationCount).toBe(0);
+    expect(dataset.warnings).toContain('Dropped 2 duplicate station rows.');
+  });
+});

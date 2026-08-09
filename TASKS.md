@@ -1,83 +1,62 @@
-# Taiwan AQI Dashboard Tasks
+# Delivery and Launch Gates
 
-## Phase 0 - Planning
+更新：2026-08-10。`[x]` 只表示有本輪可核對證據，不代表產品已公開上線。
 
-- [x] Inspect current target folder.
-- [x] Inspect reservoir dashboard reference design language.
-- [x] Verify current MOENV AQI data/API facts.
-- [x] Create `PROJECT_PLAN.md`.
-- [x] Create `TASKS.md`.
-- [x] Create `DECISIONS.md`.
-- [x] Create `REVIEW_LOG.md`.
-- [x] Review plan for vagueness and tighten scope.
+## Repository baseline
 
-## Phase 1 - Project Scaffold
+- [x] 完整讀取 README、project docs、source、scripts、workflows、tests 與 config。
+- [x] 檢查 branch、status、diff、history、remote 與 secret；保存原始 prototype baseline commit。
+- [x] 在 `codex/trustworthy-aqi-foundation` 高風險分支工作。
+- [x] 查核現行官方資料、API terms、AQI guidance、授權、競品與 Pages 文件。
 
-- [x] Scaffold Vite + React + TypeScript app.
-- [x] Configure Tailwind CSS.
-- [x] Add Recharts and test tooling.
-- [x] Add scripts for lint, typecheck, test, build.
-- [x] Add base app metadata and responsive shell.
+## P0 trust foundation
 
-## Phase 2 - AQI Data Layer
+- [x] Production cache runtime contract：核心欄位、字串型別、AQI 0–500、唯一 siteid。
+- [x] Coverage ≥ 80、22 個合法台灣縣市、valid ratio ≥ 95%、逐站 3 小時 freshness、未來 15 分鐘容忍。
+- [x] Sample/fallback deploy rejection、欄位白名單與 credential material rejection。
+- [x] Atomic promotion、last-known-good preservation、HTTP／non-JSON／network error redaction。
+- [x] CLI production validator 與 synthetic contract tests。
+- [x] 前端逐站 stale/future 計算，舊站不進入「目前」摘要、排行與建議。
+- [x] 不再預設全台最高站為個人活動建議。
+- [x] 手動縣市→測站流程；移除無行為的定位／熱點／圖層 controls。
+- [x] 真實 reload control、15 分鐘 refresh、頁面重新可見 refresh 與 last-visible error。
+- [x] 「普通」不稱安全；一般民眾／敏感族群分開呈現。
+- [x] Sample／全 stale 時停止現在結論；mixed stale 明確排除並告知數量。
+- [x] OGL attribution、資料用途與非官方聲明。
+- [x] GitHub Pages workflow 在 build 前拒絕不可信 cache。
+- [ ] 配置本產品自己的 `MOENV_API_KEY` 並產生第一份可提交的官方 production cache。
+- [ ] 建立／確認 remote 與受保護的 Pages environment。
 
-- [x] Define raw and normalized AQI TypeScript types.
-- [x] Implement AQI category mapping and health suggestions.
-- [x] Implement official data normalization.
-- [x] Implement summary aggregation for national and county views.
-- [x] Add Vitest coverage for category mapping, stale detection, malformed rows, and rankings.
-- [x] Add static sample cache.
-- [x] Add `scripts/fetch-aqi.mjs` with `MOENV_API_KEY` support.
+## Verification for this iteration
 
-## Phase 3 - Dashboard UI
+- [x] Focused TypeScript data tests。
+- [x] Synthetic Node contract、atomic write 與 redaction tests。
+- [x] 最終 lint、non-incremental typecheck、full tests、production build。
+- [x] `npm audit --omit=dev` 與 full audit；build-chain advisories 已經 lockfile 安全更新後歸零。
+- [x] Browser desktop、320px 及 390px 核心流程：選縣市、選測站、刷新。
+- [x] Browser loading、empty、error、sample/stale、fresh synthetic、mixed stale、refresh error。
+- [x] Keyboard、focus、accessible names、reduced motion 與 chart text alternative。
+- [x] Console、network、production preview、artifact contents 與 source-map 檢查。
+- [x] Independent engineering/product review 後修正；blocking/high all clear。
+- [x] Mission Guardian post-iteration review：P0 GO、public production NO-GO。
 
-- [x] Build hero summary with national AQI status, update time, stale warning, and activity advice.
-- [x] Build metric cards.
-- [x] Build AQI distribution chart.
-- [x] Build worst-area and safe-area rankings.
-- [x] Build station explorer filters.
-- [x] Build station detail cards.
-- [x] Implement loading, error, empty, success, stale, and partial-data states.
+## Public launch blockers
 
-## Phase 4 - Polish And Accessibility
+- [ ] 72 小時 hourly refresh soak 與 freshness/coverage/error monitoring。
+- [ ] 5 位以上陌生使用者核心任務測試；記錄 time-to-answer 與 stale comprehension。
+- [ ] P1 站型／代表性或明確的選站限制說明完成。
+- [ ] 正式網域決定；DNS、HTTPS、canonical、OG URL、sitemap、Search Console 使用真實值。
+- [ ] Production smoke、rollback 與 on-call/key rotation owner 可操作。
 
-- [x] Tune desktop, tablet, and mobile layouts.
-- [x] Verify keyboard navigation and visible focus.
-- [x] Verify long Chinese labels and station names wrap safely.
-- [x] Add semantic status colors with sufficient contrast.
-- [x] Add source/disclaimer footer.
-- [x] Avoid rough placeholder copy.
+## P1 after trust gate
 
-## Phase 5 - Deployment And Docs
+- [ ] AQF_P_01 最新批次 10 空品區 × 3 日 contract 與 UI。
+- [ ] 測站基本資料：站型、地址、代表性。
+- [ ] Shareable station URL 與 local-only favorites。
+- [ ] 有可靠 snapshots 後的 12–24 小時趨勢。
 
-- [x] Add GitHub Actions cache-refresh workflow.
-- [x] Add deployment-ready README.
-- [x] Add `.env.example`.
-- [x] Add source/license notes.
-- [x] Confirm static build paths work for GitHub Pages.
+## P2 only after outcome evidence
 
-## Phase 6 - Final Review
-
-- [x] Run lint.
-- [x] Run typecheck.
-- [x] Run tests.
-- [x] Run build.
-- [x] Start local preview/dev server.
-- [x] Inspect desktop UI.
-- [x] Inspect mobile UI.
-- [x] Verify loading state.
-- [x] Verify error state.
-- [x] Verify empty state.
-- [x] Verify stale-data warning.
-- [x] Update `REVIEW_LOG.md` with final evidence.
-
-## Phase 7 - Reference Redesign And Screenshot Review
-
-- [x] Inspect `livejiaquan/air-quality-monitor` repository and live design direction.
-- [x] Replace generic hero with map-first radar layout.
-- [x] Add Taiwan station projection helpers with tests.
-- [x] Add glass control panel, station markers, selected-station panel, and compact AQI legend.
-- [x] Improve mobile first screen with highest-AQI action strip and labeled tool buttons.
-- [x] Run subagent-style user review from desktop/mobile/empty screenshots.
-- [x] Fix screenshot-identified issues: oversized chart blank area, dense ranking cards, loose map composition, and off-shape station placement.
-- [x] Re-run lint, typecheck, tests, build, and screenshot checks.
+- [ ] PWA compact view。
+- [ ] 依真人需求決定是否做 Web Push；不預設必要。
+- [ ] 長期 reliability 與 product outcome metrics dashboard。

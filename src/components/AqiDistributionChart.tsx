@@ -35,9 +35,14 @@ export function AqiDistributionChart({ summary }: AqiDistributionChartProps) {
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-teal-700">AQI Distribution</p>
           <h2 className="mt-2 text-2xl font-black text-slate-950">空氣品質級距分布</h2>
         </div>
-        <p className="text-sm text-slate-500">{summary.stationCount} 個測站</p>
+        <p className="text-sm text-slate-500">{summary.currentStationCount} 個目前可用測站</p>
       </div>
-      <div ref={chartShellRef} className="mt-5 h-72 min-h-72 min-w-0">
+      <ul className="sr-only">
+        {data.map((entry) => (
+          <li key={entry.id}>{entry.name}：{entry.count} 個測站</li>
+        ))}
+      </ul>
+      <div ref={chartShellRef} aria-hidden="true" className="mt-5 h-72 min-h-72 min-w-0">
         {chartWidth > 0 ? (
           <BarChart width={chartWidth} height={288} data={data} layout="vertical" margin={{ top: 8, right: 20, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />

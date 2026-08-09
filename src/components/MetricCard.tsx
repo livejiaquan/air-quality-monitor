@@ -22,7 +22,7 @@ export function MetricCard({ title, value, detail, icon: Icon, tone = 'teal' }: 
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{value}</p>
+          <p className="mt-3 text-3xl font-black tabular-nums tracking-tight text-slate-950">{value}</p>
         </div>
         <div className={`rounded-lg border p-2.5 ${toneClasses[tone]}`}>
           <Icon aria-hidden="true" className="h-5 w-5" />
@@ -32,4 +32,3 @@ export function MetricCard({ title, value, detail, icon: Icon, tone = 'teal' }: 
     </article>
   );
 }
-

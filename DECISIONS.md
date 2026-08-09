@@ -53,3 +53,33 @@ Reason: The reference design is distinctive because the first impression is geog
 Decision: Use a UI-specific Taiwan map projection helper instead of mapping the full longitude/latitude range directly into the card.
 
 Reason: A direct full-bounds projection lets offshore islands stretch the main island composition and pushes western stations outside the stylized Taiwan shape. The helper now projects main-island stations against a compressed visual centerline and treats Kinmen/Matsu as fixed inset points, matching the intentionally simplified SVG map.
+
+## 2026-08-09 - Local, Trust-first Mission (Supersedes National Worst/Safe Framing)
+
+Decision: The primary task is manual county-and-station selection followed by source time, Taiwan AQI, and separate general/sensitive-group guidance. The product must not default to the national highest-AQI station or describe AQI 51–100 as universally safe.
+
+Reason: A national extreme is not the user's local exposure. Official guidance says the Moderate band may still affect extremely sensitive people, while current official and third-party products already cover generic maps, rankings, location, forecasts, and alerts.
+
+## 2026-08-09 - Per-station Freshness and Hard Conclusion Stop (Supersedes Newest-only Freshness)
+
+Decision: Every station is evaluated against a three-hour limit and a fifteen-minute future timestamp tolerance. Stale or anomalous stations are excluded from current aggregates and recommendations. If no current station remains, current rankings and activity conclusions stop entirely.
+
+Reason: A single fresh low-AQI row previously made a much older highest-AQI row look current. An overall newest timestamp is useful metadata but cannot establish that all conclusions are current.
+
+## 2026-08-09 - Production Cache Contract and Last-known-good Promotion
+
+Decision: A production cache requires at least 80 valid, unique, current official station rows, all 22 Taiwan counties/cities, and a 95% valid ratio. Only whitelisted fields are persisted. The overall newest timestamp and every retained station timestamp must not move backward. Validation and a same-directory temporary write must finish before atomic rename; failures preserve the existing cache.
+
+Reason: The live official response has optional pollutant gaps and all-string fields, while API failures do not have a stable error schema. Strict core validation plus tolerant optional fields prevents both false zeroes and total outages from partial but usable data.
+
+## 2026-08-09 - Deployment Must Fail Closed
+
+Decision: CI may run against the checked-in sample for UI development, but a Pages deployment must first pass `validate:aqi`. Sample, fallback, stale, incomplete, future-dated, duplicate, or credential-bearing caches cannot be published. A successful scheduled refresh triggers deployment through `workflow_run`, which re-checks the default branch; it does not rely on an auto-commit push to start another workflow.
+
+Reason: A successful JavaScript build says nothing about whether the public product has trustworthy current data. The production artifact gate must encode that distinction. GitHub does not start a new workflow from a push made by the repository `GITHUB_TOKEN`, so the refresh-to-deploy link must be explicit.
+
+## 2026-08-09 - Manual Location Before Geolocation
+
+Decision: Use an explicit county-to-station selector now. Do not request geolocation or claim “nearest/representative station” until station type, distance, privacy behavior, permission denial, and manual override are designed and verified.
+
+Reason: Official station types represent different environments; closest is not necessarily representative. Manual selection delivers a useful privacy-preserving flow without unsupported precision.

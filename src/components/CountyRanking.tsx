@@ -9,14 +9,14 @@ type CountyRankingProps = {
 
 export function CountyRanking({ summary }: CountyRankingProps) {
   const worst = summary.counties.slice(0, 5);
-  const safest = [...summary.counties].sort((a, b) => a.averageAqi - b.averageAqi || a.maxAqi - b.maxAqi).slice(0, 4);
+  const lowerAqiCounties = [...summary.counties].sort((a, b) => a.averageAqi - b.averageAqi || a.maxAqi - b.maxAqi).slice(0, 4);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-red-700">County Ranking</p>
         <h2 className="mt-2 text-2xl font-black text-slate-950">縣市風險排行</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-500">依最高 AQI 排序，搭配縣市平均與最差測站判讀。</p>
+        <p className="mt-2 text-sm leading-6 text-slate-500">依目前可用測站的最高 AQI 排序；不等同於你所在地的暴露情況。</p>
       </div>
 
       <div className="mt-5 space-y-2.5">
@@ -28,10 +28,10 @@ export function CountyRanking({ summary }: CountyRankingProps) {
       <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <div className="flex items-center gap-2 text-sm font-bold text-emerald-900">
           <ArrowDown aria-hidden="true" className="h-4 w-4" />
-          目前相對安全
+          目前平均 AQI 較低
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {safest.map((county) => (
+          {lowerAqiCounties.map((county) => (
             <div key={county.county} className="rounded-lg bg-white px-3 py-2 text-sm text-emerald-950">
               <span className="font-bold">{county.county}</span>
               <span className="text-emerald-700"> 平均 AQI {formatNumber(county.averageAqi, 0)}</span>
@@ -60,7 +60,7 @@ function CountyRow({ county, rank }: CountyRowProps) {
             <h3 className="truncate text-base font-black text-slate-950">{county.county}</h3>
             <p className="mt-1 flex flex-wrap items-center gap-1 text-sm text-slate-500">
               <MapPin aria-hidden="true" className="h-3.5 w-3.5" />
-              最差測站：{county.maxStationName}
+              最高測站：{county.maxStationName}
             </p>
           </div>
         </div>

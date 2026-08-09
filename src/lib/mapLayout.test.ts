@@ -20,6 +20,9 @@ const baseStation: AqiStationRecord = {
   },
   publishTime: '2026/05/30 09:00:00',
   publishTimeISO: '2026-05-30T09:00:00+08:00',
+  hoursSinceUpdate: 1,
+  isStale: false,
+  hasFutureTimestamp: false,
   longitude: 120.9,
   latitude: 23.7,
   categoryId: 'good',
@@ -75,4 +78,3 @@ describe('Taiwan map layout', () => {
     expect(sortStationsForMap(stations).map((station) => station.siteId)).toEqual(['safe', 'moderate', 'risk']);
   });
 });
-
