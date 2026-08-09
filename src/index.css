@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  background: #f8fafc;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.air-map-grid {
+  background-image:
+    linear-gradient(rgba(125, 211, 252, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.16), transparent 54%);
+  background-size:
+    56px 56px,
+    56px 56px,
+    100% 100%;
+}
+
+.air-map-marker {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+}
+
+.air-map-marker-risk::after {
+  content: '';
+  position: absolute;
+  inset: -0.45rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(248, 113, 113, 0.62);
+  animation: air-map-pulse 1.9s ease-out infinite;
+}
+
+@keyframes air-map-pulse {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.72);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.38);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .air-map-marker-risk::after {
+    animation: none;
+  }
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgb(20 184 166 / 0.45);
+  outline-offset: 2px;
+}

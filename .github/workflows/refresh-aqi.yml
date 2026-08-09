@@ -1,0 +1,46 @@
+name: Refresh AQI Cache
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      MOENV_API_KEY: ${{ secrets.MOENV_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stop when API key is not configured
+        if: env.MOENV_API_KEY == ''
+        run: |
+          echo "MOENV_API_KEY secret is not configured; keeping existing cache."
+
+      - name: Setup Node
+        if: env.MOENV_API_KEY != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: env.MOENV_API_KEY != ''
+        run: npm ci
+
+      - name: Fetch official AQI cache
+        if: env.MOENV_API_KEY != ''
+        run: npm run fetch:aqi
+
+      - name: Commit updated cache
+        if: env.MOENV_API_KEY != ''
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: refresh AQI cache'
+          file_pattern: public/data/aqi-latest.json
+
