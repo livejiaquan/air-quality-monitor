@@ -44,7 +44,7 @@
 
 - [ ] 72 小時 hourly refresh soak 與 freshness/coverage/error monitoring。
 - [ ] 5 位以上陌生使用者核心任務測試；記錄 time-to-answer 與 stale comprehension。
-- [ ] P1 站型／代表性或明確的選站限制說明完成。
+- [x] P1 選站限制說明：主流程明示目前沒有站型、地址或距離資料，不判定最近或代表性測站，並連到環境部站型說明。
 - [ ] 正式網域決定；DNS、HTTPS、canonical、OG URL、sitemap、Search Console 使用真實值。
 - [ ] Production smoke、rollback 與 on-call/key rotation owner 可操作。
 

@@ -83,3 +83,9 @@ Reason: A successful JavaScript build says nothing about whether the public prod
 Decision: Use an explicit county-to-station selector now. Do not request geolocation or claim “nearest/representative station” until station type, distance, privacy behavior, permission denial, and manual override are designed and verified.
 
 Reason: Official station types represent different environments; closest is not necessarily representative. Manual selection delivers a useful privacy-preserving flow without unsupported precision.
+
+## 2026-08-11 - Selection Limitation Must Be Visible at First Use
+
+Decision: Keep the manual county-to-station selector, but show an inline limitation before a user chooses a station: the current product has no station-type, address, or distance metadata and therefore does not identify the nearest or most representative station. Link to the MOENV station-type explanation.
+
+Reason: AQX_P_432 contains AQI and coordinates but no supported basis for a personal exposure or nearest-station claim. MOENV documents that general, traffic, industrial, background, and other stations serve distinct monitoring purposes. This small P1 prevents false precision now while station metadata remains an external/data integration task.

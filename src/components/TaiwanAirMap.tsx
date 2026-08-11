@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import type { AqiDataset, AqiStationRecord } from '../lib/aqi';
 import { formatHours, formatNumber, getDominantPollutant } from '../lib/format';
 import { getTaiwanMapPoint, sortStationsForMap } from '../lib/mapLayout';
+import { STATION_SELECTION_GUIDANCE } from '../lib/stationSelection';
 import { StatusBadge } from './StatusBadge';
 
 type TaiwanAirMapProps = {
@@ -154,6 +155,19 @@ export function TaiwanAirMap({
                 ))}
               </select>
             </label>
+
+            <p className="mt-3 rounded-lg border border-white/10 bg-slate-950/25 px-3 py-2 text-xs leading-5 text-slate-300">
+              <span className="font-bold text-white">選站提醒：</span>
+              {STATION_SELECTION_GUIDANCE.text}{' '}
+              <a
+                href={STATION_SELECTION_GUIDANCE.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-teal-200 underline underline-offset-2 hover:text-teal-100"
+              >
+                了解環境部測站類型
+              </a>
+            </p>
 
             <button
               type="button"
