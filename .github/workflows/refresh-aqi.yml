@@ -1,0 +1,99 @@
+name: Refresh AQI Cache
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: refresh-aqi-cache
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout independently reviewed release revision
+        uses: actions/checkout@v7
+        with:
+          ref: 73969719fce3f57dcd6a93f015dd2a774d05b6c2
+          fetch-depth: 0
+
+      - name: Require unchanged release branch before refresh
+        run: |
+          RELEASE_BRANCH=codex/unified-visual-refresh
+          RELEASE_SHA=73969719fce3f57dcd6a93f015dd2a774d05b6c2
+          REMOTE_SHA="$(git ls-remote origin "refs/heads/$RELEASE_BRANCH" | awk '{print $1}')"
+          if [ "$REMOTE_SHA" != "$RELEASE_SHA" ] || [ "$(git rev-parse HEAD)" != "$RELEASE_SHA" ]; then
+            echo "::error::Reviewed release branch no longer matches the approved revision."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch official AQI cache
+        run: npm run fetch:aqi
+        env:
+          # The existing secret is scoped to this server-side fetch process only.
+          MOENV_API_KEY: ${{ secrets.API_KEY }}
+
+      - name: Validate promoted production cache
+        run: npm run validate:aqi
+
+      - name: Verify application and release artifact
+        run: |
+          npm run test
+          npm run typecheck
+          npm run lint
+          npm run build
+          if [ -e dist/js/config.js ]; then
+            echo "::error::Release artifact contains the retired legacy client config path."
+            exit 1
+          fi
+          if rg -n -i '(api[_-]?key\s*[:=]|authorization\s*[:=]|bearer\s+[A-Za-z0-9._~-]{12,})' dist --glob '!**/*.map'; then
+            echo "::error::Release artifact contains a credential assignment or bearer token signature."
+            exit 1
+          fi
+          node scripts/validate-aqi-cache.mjs dist/data/aqi-latest.json
+
+      - name: Commit refreshed cache only if the reviewed branch is unchanged
+        run: |
+          RELEASE_BRANCH=codex/unified-visual-refresh
+          RELEASE_SHA=73969719fce3f57dcd6a93f015dd2a774d05b6c2
+          git add public/data/aqi-latest.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          REMOTE_SHA="$(git ls-remote origin "refs/heads/$RELEASE_BRANCH" | awk '{print $1}')"
+          if [ "$REMOTE_SHA" != "$RELEASE_SHA" ]; then
+            echo "::error::Release branch moved during refresh; cache was not pushed."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: refresh AQI cache"
+          git push origin "HEAD:refs/heads/$RELEASE_BRANCH"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload production artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
