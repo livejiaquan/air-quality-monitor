@@ -63,6 +63,32 @@ const SAFE_RECORD_FIELDS = [
   'siteid'
 ];
 const SAFE_RECORD_FIELD_SET = new Set(SAFE_RECORD_FIELDS);
+const OFFICIAL_FIELD_SOURCES = Object.freeze({
+  sitename: ['sitename', 'SiteName'],
+  county: ['county', 'County'],
+  aqi: ['aqi', 'AQI'],
+  pollutant: ['pollutant', 'Pollutant'],
+  status: ['status', 'Status'],
+  so2: ['so2', 'SO2'],
+  co: ['co', 'CO'],
+  o3: ['o3', 'O3'],
+  o3_8hr: ['o3_8hr', 'O3_8hr'],
+  pm10: ['pm10', 'PM10'],
+  'pm2.5': ['pm2.5', 'PM2.5'],
+  no2: ['no2', 'NO2'],
+  nox: ['nox', 'NOx'],
+  no: ['no', 'NO'],
+  wind_speed: ['wind_speed', 'WIND_SPEED', 'WindSpeed'],
+  wind_direc: ['wind_direc', 'WIND_DIREC', 'WindDirec'],
+  publishtime: ['publishtime', 'PublishTime'],
+  co_8hr: ['co_8hr', 'CO_8hr'],
+  'pm2.5_avg': ['pm2.5_avg', 'PM2.5_AVG'],
+  pm10_avg: ['pm10_avg', 'PM10_AVG'],
+  so2_avg: ['so2_avg', 'SO2_AVG'],
+  longitude: ['longitude', 'Longitude'],
+  latitude: ['latitude', 'Latitude'],
+  siteid: ['siteid', 'SiteId']
+});
 const TAIWAN_COUNTY_SET = new Set(TAIWAN_COUNTIES);
 const CACHE_FIELDS = new Set(['generatedAt', 'source', 'warnings', 'records']);
 const CACHE_SOURCE_FIELDS = new Set(['kind', 'dataset']);
@@ -105,8 +131,13 @@ export function validateAqiPayload(payload, options = {}) {
   }
 
   for (const row of rows) {
-    const result = validateRow(row, config);
-    const siteId = getNonEmptyString(row, 'siteid');
+    const normalized = normalizeOfficialRecord(row);
+    const result = validateRow(normalized.record, config);
+    if (normalized.hasConflict) {
+      result.ok = false;
+      result.reasons.push('Canonical and official alias values conflict');
+    }
+    const siteId = getNonEmptyString(normalized.record, 'siteid');
 
     if (siteId) {
       if (seenSiteIds.has(siteId)) duplicateSiteIds.add(siteId);
@@ -120,7 +151,7 @@ export function validateAqiPayload(payload, options = {}) {
       continue;
     }
 
-    validRecords.push(sanitizeRecord(row));
+    validRecords.push(sanitizeRecord(normalized.record));
     newestPublishTimeMs =
       newestPublishTimeMs === null
         ? result.publishTimeMs
@@ -421,6 +452,30 @@ function sanitizeRecord(row) {
     if (typeof row[field] === 'string') record[field] = row[field].trim();
   }
   return record;
+}
+
+function normalizeOfficialRecord(row) {
+  if (!isPlainObject(row)) return { record: row, hasConflict: false };
+
+  const record = {};
+  let hasConflict = false;
+  for (const field of SAFE_RECORD_FIELDS) {
+    const values = OFFICIAL_FIELD_SOURCES[field]
+      .filter((sourceKey) => Object.hasOwn(row, sourceKey))
+      .map((sourceKey) => row[sourceKey]);
+    if (values.length === 0) continue;
+
+    record[field] = values[0];
+    if (
+      values.length > 1 &&
+      (!values.every((value) => typeof value === 'string') ||
+        new Set(values.map((value) => value.trim())).size !== 1)
+    ) {
+      hasConflict = true;
+    }
+  }
+
+  return { record, hasConflict };
 }
 
 function extractRows(payload) {

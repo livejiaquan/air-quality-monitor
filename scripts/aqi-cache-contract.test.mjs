@@ -28,6 +28,117 @@ afterEach(async () => {
 });
 
 describe('production AQI payload validation', () => {
+  it('accepts the documented current official AQX_P_432 schema and preserves wind and publishtime', () => {
+    const cache = buildProductionCache({ records: makeOfficialSchemaRecords(84) }, { now: NOW });
+    const validation = validateProductionCache(cache, { now: NOW });
+
+    expect(validation.ok).toBe(true);
+    expect(validation.validRecordCount).toBe(84);
+    expect(cache.records[0]).toMatchObject({
+      wind_speed: '2.1',
+      wind_direc: '180',
+      publishtime: '2026/08/09 11:00:00'
+    });
+  });
+
+  it('retains explicit TitleCase compatibility aliases for wind and PublishTime', () => {
+    const validation = validateAqiPayload(
+      { records: makeTitleCaseCompatibilityRecords(84) },
+      { now: NOW }
+    );
+
+    expect(validation.ok).toBe(true);
+    expect(validation.validRecordCount).toBe(84);
+  });
+
+  it('continues accepting exact canonical lowercase payloads', () => {
+    const validation = validateAqiPayload({ records: makeRecords(84) }, { now: NOW });
+
+    expect(validation.ok).toBe(true);
+    expect(validation.validRecordCount).toBe(84);
+  });
+
+  it('rejects conflicting canonical and official alias values without retaining either raw field', () => {
+    const records = makeOfficialSchemaRecords(84);
+    records[0] = { ...records[0], sitename: '不一致測站', SiteName: '官方測站' };
+
+    const validation = validateAqiPayload({ records }, { now: NOW, minValidRatio: 1 });
+
+    expect(validation.ok).toBe(false);
+    expect(validation.issues).toContain('Canonical and official alias values conflict (1 record).');
+  });
+
+  it.each([123, {}, null, '', '不一致測站'])(
+    'rejects a valid canonical value with a present invalid or conflicting alias (%j)',
+    (aliasValue) => {
+      const records = makeRecords(84);
+      records[0].SiteName = aliasValue;
+
+      expectAliasConflict(records);
+    }
+  );
+
+  it.each([123, {}, null, '', '不一致測站'])(
+    'rejects a valid official alias with a present invalid or conflicting canonical value (%j)',
+    (canonicalValue) => {
+      const records = makeOfficialSchemaRecords(84);
+      records[0].sitename = canonicalValue;
+
+      expectAliasConflict(records);
+    }
+  );
+
+  it('rejects a three-way alias set when any present value differs', () => {
+    const records = makeOfficialSchemaRecords(84);
+    records[0].wind_speed = '2.1';
+    records[0].WIND_SPEED = '2.1';
+    records[0].WindSpeed = '2.2';
+
+    expectAliasConflict(records);
+  });
+
+  it('keeps empty or missing required official aliases invalid', () => {
+    const emptyAlias = makeOfficialSchemaRecords(84);
+    emptyAlias[0].SiteId = '';
+    const missingAlias = makeOfficialSchemaRecords(84);
+    delete missingAlias[1].publishtime;
+
+    expect(validateAqiPayload({ records: emptyAlias }, { now: NOW }).issues).toContain(
+      'Required core fields are missing or are not strings (1 record).'
+    );
+    expect(validateAqiPayload({ records: missingAlias }, { now: NOW }).issues).toContain(
+      'Required core fields are missing or are not strings (1 record).'
+    );
+  });
+
+  it('sanitizes unknown, request, and credential fields from official alias input', () => {
+    const records = makeOfficialSchemaRecords(84);
+    records[0].requestUrl = 'https://invalid.example/request';
+    records[0].api_key = 'synthetic-secret-value';
+    records[0].UnexpectedField = 'discarded';
+
+    const cache = buildProductionCache({ records }, { now: NOW });
+    const serialized = JSON.stringify(cache);
+
+    expect(cache.records).toHaveLength(84);
+    expect(serialized).not.toContain('synthetic-secret-value');
+    expect(serialized).not.toContain('https://');
+    expect(cache.records[0]).not.toHaveProperty('SiteName');
+    expect(cache.records[0]).not.toHaveProperty('UnexpectedField');
+  });
+
+  it('applies Taiwan publishtime parsing and freshness rules after official normalization', () => {
+    const stale = makeOfficialSchemaRecords(84, { publishtime: '2026/08/09 08:59:59' });
+    const future = makeOfficialSchemaRecords(84, { publishtime: '2026/08/09 12:16:00' });
+
+    expect(validateAqiPayload({ records: stale }, { now: NOW }).issues).toContain(
+      'Publish time is older than the freshness limit (84 records).'
+    );
+    expect(validateAqiPayload({ records: future }, { now: NOW }).issues).toContain(
+      'Publish time exceeds the allowed future tolerance (84 records).'
+    );
+  });
+
   it('accepts an official-style all-string payload and optional missing pollutant values', () => {
     const records = makeRecords(84);
     records[0].aqi = '0';
@@ -448,6 +559,59 @@ function makeRecords(count, overrides = {}) {
     siteid: String(index + 1).padStart(3, '0'),
     ...overrides
   }));
+}
+
+function expectAliasConflict(records) {
+  const validation = validateAqiPayload({ records }, { now: NOW, minValidRatio: 1 });
+  expect(validation.ok).toBe(false);
+  expect(validation.issues).toContain('Canonical and official alias values conflict (1 record).');
+}
+
+function makeOfficialSchemaRecords(count, overrides = {}) {
+  const aliases = {
+    sitename: 'SiteName',
+    county: 'County',
+    aqi: 'AQI',
+    pollutant: 'Pollutant',
+    status: 'Status',
+    so2: 'SO2',
+    co: 'CO',
+    o3: 'O3',
+    o3_8hr: 'O3_8hr',
+    pm10: 'PM10',
+    'pm2.5': 'PM2.5',
+    no2: 'NO2',
+    nox: 'NOx',
+    no: 'NO',
+    wind_speed: 'WIND_SPEED',
+    wind_direc: 'WIND_DIREC',
+    publishtime: 'publishtime',
+    co_8hr: 'CO_8hr',
+    'pm2.5_avg': 'PM2.5_AVG',
+    pm10_avg: 'PM10_AVG',
+    so2_avg: 'SO2_AVG',
+    longitude: 'Longitude',
+    latitude: 'Latitude',
+    siteid: 'SiteId'
+  };
+
+  return makeRecords(count).map((record) => ({
+    ...Object.fromEntries(Object.entries(record).map(([key, value]) => [aliases[key], value])),
+    ...overrides
+  }));
+}
+
+function makeTitleCaseCompatibilityRecords(count, overrides = {}) {
+  return makeOfficialSchemaRecords(count).map((record) => {
+    const { WIND_SPEED, WIND_DIREC, publishtime, ...rest } = record;
+    return {
+      ...rest,
+      WindSpeed: WIND_SPEED,
+      WindDirec: WIND_DIREC,
+      PublishTime: publishtime,
+      ...overrides
+    };
+  });
 }
 
 async function createTemporaryDirectory() {
