@@ -16,7 +16,9 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     env:
-      MOENV_API_KEY: ${{ secrets.MOENV_API_KEY }}
+      # Compatibility mapping: API_KEY is the existing repository secret.
+      # It is consumed only by the server-side fetch job and is never built into dist.
+      MOENV_API_KEY: ${{ secrets.API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
