@@ -6,6 +6,7 @@ import { MetricCard } from './components/MetricCard';
 import { ErrorPanel, LoadingDashboard } from './components/StatePanels';
 import { StationExplorer } from './components/StationExplorer';
 import { TaiwanAirMap } from './components/TaiwanAirMap';
+import { SiteHeader } from './components/SiteHeader';
 import { recomputeAqiDatasetFreshness, type AqiDataset, type AqiStationRecord } from './lib/aqi';
 import { loadAqiDataset } from './lib/data';
 import { formatNumber, getDominantPollutant } from './lib/format';
@@ -177,10 +178,9 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
       >
         跳到主要內容
       </a>
-      <main
-        id="main-content"
-        className="min-h-screen bg-[linear-gradient(180deg,#f0fdfa_0%,#f8fafc_34%,#eef2f7_100%)] px-4 py-5 text-slate-950 sm:px-6 lg:px-8"
-      >
+      <div className="min-h-screen bg-[radial-gradient(circle_at_85%_0%,rgba(34,211,238,.10),transparent_22rem),linear-gradient(180deg,#f6f7f2_0%,#eef5f1_100%)]">
+      <SiteHeader />
+      <main id="main-content" className="px-4 pb-8 text-[#10211c] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <TaiwanAirMap
           dataset={dataset}
@@ -196,7 +196,7 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
           <section
             role="status"
             aria-live="polite"
-            className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-soft"
+            className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-soft"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
               <AlertTriangle aria-hidden="true" className="h-5 w-5 shrink-0 text-amber-700" />
@@ -257,7 +257,7 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
               <CountyRanking summary={summary} />
             </section>
 
-            <section className="rounded-lg border border-emerald-200 bg-white p-5 shadow-soft">
+            <section className="rounded-2xl border border-[#c9d7d1] bg-white/90 p-5 shadow-soft">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">Lower AQI</p>
@@ -293,7 +293,7 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
             </section>
           </>
         ) : (
-          <section className="rounded-lg border border-slate-300 bg-white p-8 text-center shadow-soft">
+          <section className="rounded-2xl border border-[#c9d7d1] bg-white p-8 text-center shadow-soft">
             <AlertTriangle aria-hidden="true" className="mx-auto h-8 w-8 text-amber-700" />
             <h2 className="mt-3 text-xl font-black text-slate-950">現在排行與活動建議已暫停</h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600">
@@ -312,12 +312,12 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
 
         <StationExplorer stations={records} canShowCurrentAdvice={isOfficialSource} />
 
-        <footer className="rounded-lg border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600 shadow-soft">
+        <footer className="rounded-2xl border border-[#c9d7d1] bg-white/80 p-5 text-sm leading-6 text-[#52706a] shadow-soft">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="flex items-center gap-2 font-black text-slate-950">
-                <CloudSun aria-hidden="true" className="h-5 w-5 text-teal-700" />
-                台灣空氣品質儀表板
+                <CloudSun aria-hidden="true" className="h-5 w-5 text-[#0f766e]" />
+                台灣生活資料誌 · 空氣品質
               </div>
               <p className="mt-2 max-w-3xl">
                 資料來源：環境部「
@@ -335,7 +335,7 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
               href="https://airtw.moenv.gov.tw/"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex shrink-0 items-center justify-center rounded-xl border border-[#b8cbc4] px-4 py-2.5 font-semibold text-[#24473e] transition hover:bg-[#f1f7f4]"
             >
               官方即時監測
             </a>
@@ -343,6 +343,7 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
         </footer>
       </div>
       </main>
+      </div>
     </>
   );
 }

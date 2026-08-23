@@ -12,7 +12,7 @@ export function CountyRanking({ summary }: CountyRankingProps) {
   const lowerAqiCounties = [...summary.counties].sort((a, b) => a.averageAqi - b.averageAqi || a.maxAqi - b.maxAqi).slice(0, 4);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
+    <section className="rounded-2xl border border-[#c9d7d1] bg-white/90 p-5 shadow-soft">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-red-700">County Ranking</p>
         <h2 className="mt-2 text-2xl font-black text-slate-950">縣市風險排行</h2>

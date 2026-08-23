@@ -21,7 +21,7 @@ export function StationCard({ station, canShowCurrentAdvice }: StationCardProps)
   const canInformNow = canShowCurrentAdvice && !station.isStale;
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-dashboard motion-reduce:transform-none">
+    <article className="rounded-2xl border border-[#c9d7d1] bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-dashboard motion-reduce:transform-none">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="truncate text-lg font-black text-slate-950">{station.stationName}</h3>

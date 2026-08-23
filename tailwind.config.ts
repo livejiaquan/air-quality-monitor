@@ -19,11 +19,10 @@ export default {
         }
       },
       boxShadow: {
-        dashboard: '0 18px 45px -28px rgb(15 23 42 / 0.45)',
-        soft: '0 12px 30px -22px rgb(15 23 42 / 0.35)'
+        dashboard: '0 18px 45px -30px rgb(16 33 28 / 0.32)',
+        soft: '0 12px 30px -24px rgb(16 33 28 / 0.25)'
       }
     }
   },
   plugins: []
 } satisfies Config;
-

@@ -47,7 +47,7 @@ export function StationExplorer({ stations, canShowCurrentAdvice }: StationExplo
   };
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
+    <section className="rounded-2xl border border-[#c9d7d1] bg-white/90 p-5 shadow-soft">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-teal-700">Station Explorer</p>

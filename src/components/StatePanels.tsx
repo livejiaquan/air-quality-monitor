@@ -1,8 +1,9 @@
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { SiteHeader } from './SiteHeader';
 
 export function LoadingDashboard() {
   return (
-    <main id="main-content" role="status" aria-live="polite" className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f6f7f2] text-[#10211c]"><SiteHeader /><main id="main-content" role="status" aria-live="polite" className="px-4 py-6 sm:px-6 lg:px-8">
       <p className="sr-only">正在載入空氣品質資料</p>
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="h-64 animate-pulse rounded-lg bg-slate-200 motion-reduce:animate-none" />
@@ -16,7 +17,7 @@ export function LoadingDashboard() {
           <div className="h-96 animate-pulse rounded-lg bg-slate-200 motion-reduce:animate-none" />
         </div>
       </div>
-    </main>
+    </main></div>
   );
 }
 
@@ -26,9 +27,9 @@ type ErrorPanelProps = {
 
 export function ErrorPanel({ onRetry }: ErrorPanelProps) {
   return (
-    <main id="main-content" className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f6f7f2] text-[#10211c]"><SiteHeader /><main id="main-content" className="px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
-        <section role="alert" className="w-full rounded-lg border border-red-200 bg-white p-8 shadow-dashboard">
+        <section role="alert" className="w-full rounded-2xl border border-red-200 bg-white p-8 shadow-dashboard">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
               <AlertTriangle aria-hidden="true" className="h-6 w-6" />
@@ -61,6 +62,6 @@ export function ErrorPanel({ onRetry }: ErrorPanelProps) {
           </div>
         </section>
       </div>
-    </main>
+    </main></div>
   );
 }

@@ -29,7 +29,7 @@ export function AqiDistributionChart({ summary }: AqiDistributionChartProps) {
   }, []);
 
   return (
-    <section className="min-w-0 self-start rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
+    <section className="min-w-0 self-start rounded-2xl border border-[#c9d7d1] bg-white/90 p-5 shadow-soft">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-teal-700">AQI Distribution</p>

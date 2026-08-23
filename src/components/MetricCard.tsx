@@ -18,17 +18,17 @@ const toneClasses = {
 
 export function MetricCard({ title, value, detail, icon: Icon, tone = 'teal' }: MetricCardProps) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
+    <article className="rounded-2xl border border-[#c9d7d1] bg-white/90 p-5 shadow-soft">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-3 text-3xl font-black tabular-nums tracking-tight text-slate-950">{value}</p>
+          <p className="text-sm font-medium text-[#52706a]">{title}</p>
+          <p className="mt-3 text-3xl font-black tabular-nums tracking-tight text-[#10211c]">{value}</p>
         </div>
         <div className={`rounded-lg border p-2.5 ${toneClasses[tone]}`}>
           <Icon aria-hidden="true" className="h-5 w-5" />
         </div>
       </div>
-      <p className="mt-4 text-sm leading-6 text-slate-600">{detail}</p>
+      <p className="mt-4 text-sm leading-6 text-[#52706a]">{detail}</p>
     </article>
   );
 }

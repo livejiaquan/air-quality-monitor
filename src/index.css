@@ -11,12 +11,15 @@
 }
 
 html {
-  background: #f8fafc;
+  background: #f6f7f2;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  background: #f6f7f2;
+  color: #10211c;
+  font-family: Inter, "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
 }
 
 h1,
@@ -40,9 +43,9 @@ select {
 
 .air-map-grid {
   background-image:
-    linear-gradient(rgba(125, 211, 252, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(125, 211, 252, 0.1) 1px, transparent 1px),
-    radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.16), transparent 54%);
+    linear-gradient(rgba(15, 118, 110, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 118, 110, 0.07) 1px, transparent 1px),
+    radial-gradient(circle at 50% 45%, rgba(34, 211, 238, 0.13), transparent 58%);
   background-size:
     56px 56px,
     56px 56px,
@@ -89,6 +92,6 @@ button:focus-visible,
 a:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 3px solid rgb(20 184 166 / 0.45);
+  outline: 3px solid rgb(15 118 110 / 0.48);
   outline-offset: 2px;
 }
