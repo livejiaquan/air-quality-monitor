@@ -38,7 +38,7 @@ jobs:
         run: |
           node bridge/scripts/verify-release-branch.mjs \
             --repo release \
-            --approved-sha 1f68681722b61c401e52e706413691e55a5aab63 \
+            --approved-sha d83f7cc80d23aa315de58165b9053204b450c0f8 \
             --release-branch codex/unified-visual-refresh \
             --allow-path public/data/aqi-latest.json
           echo "release_sha=$(git -C release rev-parse HEAD)" >> "$GITHUB_OUTPUT"
