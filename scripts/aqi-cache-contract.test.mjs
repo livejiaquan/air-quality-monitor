@@ -269,6 +269,18 @@ describe('production AQI payload validation', () => {
     expect(futureValidation.ok).toBe(true);
   });
 
+  it('reports a source-wide timestamp outage without redundant coverage failures', () => {
+    const stale = makeRecords(84, { publishtime: '2026/08/09 08:00:00' });
+
+    const validation = validateAqiPayload({ records: stale }, { now: NOW });
+
+    expect(validation.ok).toBe(false);
+    expect(validation.issues).toEqual([
+      'Publish time is older than the freshness limit (84 records).',
+      'No station records are within the allowed publish-time window.'
+    ]);
+  });
+
   it.each(['sample', 'fallback'])('rejects %s caches from production validation', (kind) => {
     const cache = {
       generatedAt: NOW,

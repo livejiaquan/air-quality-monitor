@@ -112,6 +112,7 @@ export function validateAqiPayload(payload, options = {}) {
   const validRecords = [];
   const seenSiteIds = new Set();
   const duplicateSiteIds = new Set();
+  let timeWindowOnlyInvalidRecords = 0;
   let newestPublishTimeMs = null;
 
   const sourceKind = getSourceKind(payload);
@@ -148,6 +149,15 @@ export function validateAqiPayload(payload, options = {}) {
       for (const reason of result.reasons) {
         invalidReasonCounts.set(reason, (invalidReasonCounts.get(reason) ?? 0) + 1);
       }
+      if (
+        result.reasons.length > 0 &&
+        result.reasons.every((reason) =>
+          reason === 'Publish time is older than the freshness limit' ||
+          reason === 'Publish time exceeds the allowed future tolerance'
+        )
+      ) {
+        timeWindowOnlyInvalidRecords += 1;
+      }
       continue;
     }
 
@@ -170,24 +180,30 @@ export function validateAqiPayload(payload, options = {}) {
 
   const totalRecords = rows.length;
   const validRatio = totalRecords === 0 ? 0 : validRecords.length / totalRecords;
+  const sourceWideTimeWindowFailure =
+    totalRecords > 0 && timeWindowOnlyInvalidRecords === totalRecords;
 
   if (totalRecords === 0) {
     const issue = 'Payload contains no station records.';
     issues.push(issue);
     blockingIssues.push(issue);
   }
-  if (validRecords.length < config.minRecords) {
+  if (sourceWideTimeWindowFailure) {
+    const issue = 'No station records are within the allowed publish-time window.';
+    issues.push(issue);
+    blockingIssues.push(issue);
+  } else if (validRecords.length < config.minRecords) {
     const issue = `Valid station coverage is below the required minimum of ${config.minRecords}.`;
     issues.push(issue);
     blockingIssues.push(issue);
   }
   const validCountyCount = new Set(validRecords.map((record) => record.county)).size;
-  if (validCountyCount < config.minCounties) {
+  if (!sourceWideTimeWindowFailure && validCountyCount < config.minCounties) {
     const issue = `Valid county coverage is below the required minimum of ${config.minCounties}.`;
     issues.push(issue);
     blockingIssues.push(issue);
   }
-  if (validRatio < config.minValidRatio) {
+  if (!sourceWideTimeWindowFailure && validRatio < config.minValidRatio) {
     const issue = `Valid station ratio is below the required minimum of ${formatRatio(config.minValidRatio)}.`;
     issues.push(issue);
     blockingIssues.push(issue);
