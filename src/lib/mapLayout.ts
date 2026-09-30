@@ -1,4 +1,5 @@
-import type { AqiStationRecord } from './aqi';
+import type { AqiStationRecord, SourceKind } from './aqi';
+import { getObservationPresentation } from './observationPresentation';
 
 type MapPoint = {
   x: number;
@@ -47,4 +48,29 @@ export function sortStationsForMap(stations: AqiStationRecord[]): AqiStationReco
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value * 10) / 10));
+}
+
+// County views keep noncurrent stations discoverable, even when other counties
+// have current data. National views prefer current observations, with at most
+// one representative per county; noncurrent values never determine a ranking.
+export function getVisibleMapStations(records: AqiStationRecord[], sourceKind: SourceKind, county: string): AqiStationRecord[] {
+  const mappable = records.filter((station) => getTaiwanMapPoint(station) !== null);
+  if (county !== 'all') {
+    return mappable.filter((station) => station.county === county).sort((a, b) => {
+      const aCurrent = getObservationPresentation(a, sourceKind).isCurrent;
+      const bCurrent = getObservationPresentation(b, sourceKind).isCurrent;
+      // Paint current observations last so old high-AQI records cannot hide them.
+      return Number(aCurrent) - Number(bCurrent) || (aCurrent ? a.aqi - b.aqi : a.stationName.localeCompare(b.stationName, 'zh-Hant'));
+    });
+  }
+  const current = mappable.filter((station) => getObservationPresentation(station, sourceKind).isCurrent);
+  const candidates = current.length ? current : [...mappable].sort((a, b) => a.stationName.localeCompare(b.stationName, 'zh-Hant'));
+  const representative = new Map<string, AqiStationRecord>();
+  candidates.forEach((station) => {
+    const saved = representative.get(station.county);
+    if (!saved || (current.length > 0 && station.aqi > saved.aqi)) representative.set(station.county, station);
+  });
+  const stations = [...representative.values()];
+  if (current.length) return sortStationsForMap(stations.sort((a, b) => b.aqi - a.aqi).slice(0, 12));
+  return stations.sort((a, b) => a.county.localeCompare(b.county, 'zh-Hant')).slice(0, 12);
 }

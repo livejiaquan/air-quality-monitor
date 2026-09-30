@@ -1,11 +1,11 @@
 import { RotateCcw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { AQI_CATEGORIES, type AqiCategoryId, type AqiStationRecord } from '../lib/aqi';
+import { AQI_CATEGORIES, type AqiCategoryId, type AqiStationRecord, type SourceKind } from '../lib/aqi';
 import { StationCard } from './StationCard';
 
 type StationExplorerProps = {
   stations: AqiStationRecord[];
-  canShowCurrentAdvice: boolean;
+  sourceKind: SourceKind;
 };
 
 const categoryOptions: Array<{ id: AqiCategoryId | 'all'; label: string }> = [
@@ -18,7 +18,7 @@ const categoryOptions: Array<{ id: AqiCategoryId | 'all'; label: string }> = [
 
 const STATIONS_PER_PAGE = 24;
 
-export function StationExplorer({ stations, canShowCurrentAdvice }: StationExplorerProps) {
+export function StationExplorer({ stations, sourceKind }: StationExplorerProps) {
   const [county, setCounty] = useState('all');
   const [category, setCategory] = useState<AqiCategoryId | 'all'>('all');
   const [query, setQuery] = useState('');
@@ -52,7 +52,7 @@ export function StationExplorer({ stations, canShowCurrentAdvice }: StationExplo
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-teal-700">Station Explorer</p>
           <h2 className="mt-2 text-2xl font-black text-slate-950">測站細節</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">依縣市、AQI 狀態或污染物搜尋測站。</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">依縣市、快取 AQI 分類或污染物搜尋測站；過期、時間無效及展示資料不代表現在狀況。</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-[1fr_1fr] lg:min-w-[520px] lg:grid-cols-[1fr_1fr_1.2fr]">
           <label className="block">
@@ -75,7 +75,7 @@ export function StationExplorer({ stations, canShowCurrentAdvice }: StationExplo
             </select>
           </label>
           <label className="block">
-            <span className="sr-only">AQI 狀態篩選</span>
+            <span className="sr-only">快取 AQI 分類篩選</span>
             <select
               name="explorer-category"
               autoComplete="off"
@@ -144,7 +144,7 @@ export function StationExplorer({ stations, canShowCurrentAdvice }: StationExplo
         <>
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {visibleStations.map((station) => (
-              <StationCard key={station.siteId} station={station} canShowCurrentAdvice={canShowCurrentAdvice} />
+              <StationCard key={station.siteId} station={station} sourceKind={sourceKind} />
             ))}
           </div>
           {remainingStationCount > 0 ? (

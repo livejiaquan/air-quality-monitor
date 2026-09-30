@@ -1,11 +1,12 @@
 import { AlertTriangle, MapPin, Wind } from 'lucide-react';
-import type { AqiStationRecord } from '../lib/aqi';
-import { formatHours, formatNumber } from '../lib/format';
+import type { AqiStationRecord, SourceKind } from '../lib/aqi';
+import { formatNumber } from '../lib/format';
+import { getObservationPresentation } from '../lib/observationPresentation';
 import { StatusBadge } from './StatusBadge';
 
 type StationCardProps = {
   station: AqiStationRecord;
-  canShowCurrentAdvice: boolean;
+  sourceKind: SourceKind;
 };
 
 const pollutantLabels: Array<[keyof AqiStationRecord['pollutantValues'], string, string]> = [
@@ -17,8 +18,9 @@ const pollutantLabels: Array<[keyof AqiStationRecord['pollutantValues'], string,
   ['no2', 'NO2', 'ppb']
 ];
 
-export function StationCard({ station, canShowCurrentAdvice }: StationCardProps) {
-  const canInformNow = canShowCurrentAdvice && !station.isStale;
+export function StationCard({ station, sourceKind }: StationCardProps) {
+  const observation = getObservationPresentation(station, sourceKind);
+  const canInformNow = observation.isCurrent;
 
   return (
     <article className="rounded-2xl border border-[#c9d7d1] bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-dashboard motion-reduce:transform-none">
@@ -33,18 +35,18 @@ export function StationCard({ station, canShowCurrentAdvice }: StationCardProps)
         {!canInformNow ? (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900">
             <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
-            {canShowCurrentAdvice ? '資料過期' : '僅供展示'}
+            {observation.label}
           </span>
         ) : (
           <StatusBadge category={station.category} value={station.aqi} compact />
         )}
       </div>
 
-      <div className="mt-5 rounded-lg border p-4" style={{ borderColor: station.category.color }}>
+      <div className="mt-5 rounded-lg border p-4" style={{ borderColor: observation.borderColor }}>
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {canInformNow ? 'Main Pollutant' : 'Cached Pollutant'}
+              {canInformNow ? '主要污染物' : sourceKind === 'official-cache' ? '快取污染物 · 非現在狀況' : '展示污染物 · 非現在狀況'}
             </p>
             <p className="mt-1 text-xl font-black text-slate-950">{station.mainPollutant}</p>
           </div>
@@ -52,7 +54,7 @@ export function StationCard({ station, canShowCurrentAdvice }: StationCardProps)
         </div>
         {!canInformNow ? (
           <p className="mt-3 text-sm font-semibold leading-6 text-amber-900">
-            {canShowCurrentAdvice ? '這筆資料已過期，不代表現在狀況，因此不提供活動建議。' : '這是範例或備援資料，不代表現在狀況，因此不提供活動建議。'}
+            {observation.label}，不代表現在狀況，因此不提供活動建議。
           </p>
         ) : (
           <div className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
@@ -75,7 +77,7 @@ export function StationCard({ station, canShowCurrentAdvice }: StationCardProps)
       </dl>
 
       <p className="mt-4 text-xs leading-5 text-slate-500">
-        發布時間：{station.publishTime || '未知'} · {station.hasFutureTimestamp ? '時間戳異常' : formatHours(station.hoursSinceUpdate)}
+        發布時間：{observation.publishedAt}（台灣時間） · {observation.ageLabel}
       </p>
     </article>
   );

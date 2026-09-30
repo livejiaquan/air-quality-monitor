@@ -25,3 +25,16 @@ export function getDominantPollutant(stations: AqiStationRecord[]): string {
 
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'))[0]?.[0] ?? '無明顯污染物';
 }
+
+export function formatPublishTime(value: string | null | undefined): string {
+  if (!value || !Number.isFinite(Date.parse(value))) return '未知';
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).format(new Date(value)).replace(/\s+/g, ' ');
+}

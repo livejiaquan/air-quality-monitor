@@ -89,3 +89,11 @@ Reason: Official station types represent different environments; closest is not 
 Decision: Keep the manual county-to-station selector, but show an inline limitation before a user chooses a station: the current product has no station-type, address, or distance metadata and therefore does not identify the nearest or most representative station. Link to the MOENV station-type explanation.
 
 Reason: AQX_P_432 contains AQI and coordinates but no supported basis for a personal exposure or nearest-station claim. MOENV documents that general, traffic, industrial, background, and other stations serve distinct monitoring purposes. This small P1 prevents false precision now while station metadata remains an external/data integration task.
+
+## 2026-09-30 - Noncurrent Observations Must Look Noncurrent
+
+Decision: Only usable official observations receive numeric, category-colored map markers. Stale observations, missing or anomalous timestamps, and sample/fallback sources receive neutral dashed text markers with explicit status and publication time. Selected detail and station cards retain noncurrent values for inspection with neutral borders and suspended advice. Unavailable current summaries use neutral tones.
+
+Reason: A warning outside the map did not prevent old AQI numbers and green borders from looking current. Trust state must travel with every observation, including its accessible label. County views keep noncurrent stations selectable even when another county has current data; current markers render above noncurrent markers. National representatives and current aggregates still exclude noncurrent observations when current ones are available. Map counts include only plotted stations, and its latest publication time is explicitly scoped to the visible map.
+
+Verification: Component render regressions cover current good/hazardous values, stale/missing/future timestamps, fresh sample/fallback sources, mixed and empty coverage, neutral summaries, and a retained cache crossing the three-hour stop. Ages preserve precision until formatting to avoid showing a still-current 2h 59m 59s observation as three hours old. These checks do not substitute for browser visual or interaction QA.

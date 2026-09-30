@@ -417,7 +417,8 @@ export function getFreshness(
   return {
     newestPublishTime: formatTaiwanDate(newestPublishTimeISO),
     newestPublishTimeISO,
-    hoursSinceUpdate: round(Math.max(0, hoursSinceUpdate), 2),
+    // Keep precision until formatting so 2h 59m 59s never looks three hours old.
+    hoursSinceUpdate: Math.max(0, hoursSinceUpdate),
     isStale: hasFutureTimestamp || hoursSinceUpdate >= STALE_THRESHOLD_HOURS,
     hasFutureTimestamp
   };

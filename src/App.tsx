@@ -123,7 +123,7 @@ type DashboardProps = {
   onRefresh: () => void;
 };
 
-function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: DashboardProps) {
+export function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: DashboardProps) {
   const { summary, records, warnings } = dataset;
   const [selectedCounty, setSelectedCounty] = useState('all');
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
@@ -212,20 +212,20 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
           </section>
         )}
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section aria-label="當期資料摘要" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard
             title="目前可用測站"
             value={`${currentStationCount} / ${summary.stationCount}`}
             detail="3 小時內且時間有效／快取中的測站"
             icon={RadioTower}
-            tone="teal"
+            tone={hasCurrentData ? 'teal' : 'slate'}
           />
           <MetricCard
             title="良好／普通測站"
             value={hasCurrentData ? `${summary.healthyStationCount}` : '--'}
             detail={hasCurrentData ? `AQI 100 以下，涵蓋 ${lowerAqiCountyCount} 個縣市；高度敏感者仍需留意` : '等待可信且新鮮的官方快取'}
             icon={ShieldCheck}
-            tone="green"
+            tone={hasCurrentData ? 'green' : 'slate'}
           />
           <MetricCard
             title="需留意測站"
@@ -239,7 +239,7 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
             value={highestCounty?.county ?? '--'}
             detail={highestCounty ? `${highestCounty.maxStationName} AQI ${highestCounty.maxAqi}` : '等待可信且新鮮的官方快取'}
             icon={MapPinned}
-            tone="amber"
+            tone={hasCurrentData ? 'amber' : 'slate'}
           />
           <MetricCard
             title="主要污染物"
@@ -310,7 +310,7 @@ function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Dashboard
           </section>
         )}
 
-        <StationExplorer stations={records} canShowCurrentAdvice={isOfficialSource} />
+        <StationExplorer stations={records} sourceKind={dataset.source.kind} />
 
         <footer className="rounded-2xl border border-[#c9d7d1] bg-white/80 p-5 text-sm leading-6 text-[#52706a] shadow-soft">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
