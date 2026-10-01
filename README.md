@@ -76,7 +76,9 @@ npm run test
 npm run build
 ```
 
-`npm run validate:aqi` 是 production data gate；在目前 sample cache 上失敗是預期結果。CI 可驗證程式與 synthetic contract fixtures，部署工作流則必須額外通過真實 production cache gate。
+`.github/workflows/ci.yml` 會在 pull request，以及 `main`、`master`、`codex/**` 分支 push 時執行上述四項檢查。CI 只有 repository 讀取權限，不使用 API key、不改寫快取，也不發布 GitHub Pages；同一事件／分支的新提交會取消較舊的 CI，單次檢查最多 10 分鐘。
+
+`npm run validate:aqi` 是 production data gate；在 sample 或過期快取上失敗是預期結果。CI 透過 synthetic contract fixtures 驗證拒絕過期資料等規則，不會因開發分支的靜態快取自然老化而跳過程式檢查；部署工作流仍必須額外通過真實 production cache gate，逐站 3 小時 freshness 門檻不變。
 
 ## 部署
 
