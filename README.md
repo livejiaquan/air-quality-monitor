@@ -4,11 +4,11 @@
 
 ## 目前狀態
 
-此 repository 已具備可重現的前端、資料驗證、定時更新、CI 與 GitHub Pages 部署流程，但**尚未達到公開上線門檻**：
+此 repository 已具備可重現的前端、資料驗證、定時更新、CI 與 GitHub Pages 部署流程。**開發分支通過程式檢查，不等於正式資料與上線門檻已全部完成**：
 
-- checked-in cache 仍是刻意標記的 12 站範例資料，不能當成現在狀況。
+- checked-in cache 是具有原始發布時間的靜態快照，會自然過期；前端依每站 3 小時門檻判斷，不會因重新整理而變新。
 - production deployment 會主動拒絕 sample、fallback、過期或覆蓋不足的 cache。
-- 尚未配置本產品自己的 `MOENV_API_KEY`、remote repository、GitHub Pages environment、正式網域與 72 小時更新觀察。
+- Remote repository 已存在於 [livejiaquan/air-quality-monitor](https://github.com/livejiaquan/air-quality-monitor)。本開發分支的 UI 驗證不會改動 production 分支，也不據此宣稱 secret、正式網域或 72 小時更新觀察已驗證完成。
 - 三日空品區預報、測站站型／距離與真實使用者測試仍在 roadmap，不能宣稱已完成。
 
 產品在沒有可信當期資料時會停止現在排行與活動結論，而不是用範例或舊資料填滿畫面。
@@ -46,14 +46,24 @@ npm ci
 npm run dev
 ```
 
-Vite 會印出本機網址。預設看到 sample/stale gate 是正確行為。
+Vite 會印出本機網址。靜態快照若已過期，預設看到 stale gate 是正確行為；範例與備援資料則始終停止現在結論。
 
 可重現的展示狀態：
 
-- `/`：checked-in cache（目前為 sample/stale）
+- `/`：checked-in cache（依來源種類與各站發布時間判斷是否可用）
 - `/?demo=error`：載入錯誤
 - `/?demo=empty`：空資料
 - `/?demo=loading`：載入中
+
+## 所在地查詢與測站探索
+
+- 首要閱讀順序固定為縣市／測站選擇 → 所選測站、發布時間與活動提醒 → 示意分布；窄螢幕不必先越過地圖才能看結果。
+- 地圖與測站卡片的選擇會同步到同一組縣市／測站控制。測站卡片可返回所選結果區；不要求定位權限。
+- 測站資料庫以縣市、站名排序，可組合縣市、資料時效、資料內 AQI 分類與關鍵字。非當期值可查核，但不混入現在的活動判斷。
+- 卡片先顯示 AQI、資料狀態與發布時間；6 項污染物與分族群說明使用原生 `details`／`summary` 展開。缺值顯示「未提供」，實測 0 保留為 0。
+- 篩選欄位有可見標籤、結果數提示與清除操作；每次顯示 12 站。選站、篩選、展開與重試使用原生可鍵盤操作的控制，保留焦點樣式。
+
+上述是實作與自動化測試契約。320／390／768／1440px、200% 縮放、鍵盤全流程及螢幕閱讀器仍需在實際渲染環境完成驗證；不可將伺服器端 HTML 測試視為已通過視覺或輔助科技驗收。
 
 ## 抓取官方資料
 
@@ -82,7 +92,7 @@ npm run build
 
 ## 部署
 
-`.github/workflows/deploy-pages.yml` 使用 GitHub Pages custom workflow。它接收預設分支 push／手動操作，也在 refresh workflow 成功後以 `workflow_run` 重新 checkout 預設分支，避免 `GITHUB_TOKEN` 自動提交不會觸發下一個 push workflow 的限制。每次部署依序：
+`.github/workflows/deploy-pages.yml` 使用 GitHub Pages custom workflow。它接收預設分支與 `codex/unified-visual-refresh` 的 push／手動操作，也在 refresh workflow 成功後以 `workflow_run` 重新 checkout 預設分支，避免 `GITHUB_TOKEN` 自動提交不會觸發下一個 push workflow 的限制。每次部署依序：
 
 1. 安裝 lockfile dependencies。
 2. 拒絕 sample、fallback、過期與覆蓋不足的 cache。
@@ -91,7 +101,7 @@ npm run build
 
 啟用前仍需人工完成：
 
-1. 建立 remote repository，將受 review 的分支合併到預設分支。
+1. 在既有 repository 審核開發分支；合併或更新 production 分支需要另行授權。
 2. 在 Actions secret 設定本產品自己的 `MOENV_API_KEY`。
 3. 在 Pages 將 source 設為 GitHub Actions，保護 `github-pages` environment。
 4. 先成功執行 refresh workflow，確認 cache 為新鮮官方資料，再觸發部署。

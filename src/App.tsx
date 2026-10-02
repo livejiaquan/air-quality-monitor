@@ -169,6 +169,10 @@ export function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Da
     setSelectedCounty(county);
     setSelectedStationId(null);
   }, []);
+  const handleStationSelect = useCallback((station: AqiStationRecord) => {
+    setSelectedCounty(station.county);
+    setSelectedStationId(station.siteId);
+  }, []);
 
   return (
     <>
@@ -187,7 +191,7 @@ export function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Da
           selectedCounty={selectedCounty}
           selectedStation={selectedStation}
           onCountyChange={handleCountyChange}
-          onStationSelect={(station) => setSelectedStationId(station.siteId)}
+          onStationSelect={handleStationSelect}
           onRefresh={onRefresh}
           isRefreshing={isRefreshing}
         />
@@ -310,7 +314,7 @@ export function Dashboard({ dataset, isRefreshing, refreshError, onRefresh }: Da
           </section>
         )}
 
-        <StationExplorer stations={records} sourceKind={dataset.source.kind} />
+        <StationExplorer stations={records} sourceKind={dataset.source.kind} selectedStationId={selectedStationId} onStationSelect={handleStationSelect} />
 
         <footer className="rounded-2xl border border-[#c9d7d1] bg-white/80 p-5 text-sm leading-6 text-[#52706a] shadow-soft">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

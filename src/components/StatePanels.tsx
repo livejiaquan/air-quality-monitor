@@ -4,8 +4,8 @@ import { SiteHeader } from './SiteHeader';
 export function LoadingDashboard() {
   return (
     <div className="min-h-screen bg-[#f6f7f2] text-[#10211c]"><SiteHeader /><main id="main-content" role="status" aria-live="polite" className="px-4 py-6 sm:px-6 lg:px-8">
-      <p className="sr-only">正在載入空氣品質資料</p>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto mb-6 max-w-7xl"><p className="text-sm font-bold text-[#0f766e]">所在地空氣快查</p><h1 className="mt-2 text-2xl font-black sm:text-3xl">正在載入空氣品質資料</h1><p className="mt-3 text-base leading-7 text-[#52706a]">取得資料後，會先確認各站發布時間，再顯示可用的活動提醒。</p></div>
+      <div aria-hidden="true" className="mx-auto max-w-7xl space-y-6">
         <div className="h-64 animate-pulse rounded-lg bg-slate-200 motion-reduce:animate-none" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -29,12 +29,12 @@ export function ErrorPanel({ onRetry }: ErrorPanelProps) {
   return (
     <div className="min-h-screen bg-[#f6f7f2] text-[#10211c]"><SiteHeader /><main id="main-content" className="px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
-        <section role="alert" className="w-full rounded-2xl border border-red-200 bg-white p-8 shadow-dashboard">
+        <section role="alert" className="w-full rounded-2xl border border-red-200 bg-white p-5 shadow-dashboard sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
               <AlertTriangle aria-hidden="true" className="h-6 w-6" />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-red-700">資料載入失敗</p>
               <h1 className="mt-2 text-2xl font-black text-slate-950">無法讀取 AQI 快取</h1>
               <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -44,7 +44,7 @@ export function ErrorPanel({ onRetry }: ErrorPanelProps) {
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
                   <RefreshCw aria-hidden="true" className="h-4 w-4" />
                   重新載入
@@ -53,7 +53,7 @@ export function ErrorPanel({ onRetry }: ErrorPanelProps) {
                   href="https://airtw.moenv.gov.tw/"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   查看官方監測
                 </a>

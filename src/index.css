@@ -52,46 +52,92 @@ select {
     100% 100%;
 }
 
+/* Essential metadata and controls stay readable, including at narrow widths. */
+.observation-meta {
+  color: #52706a;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
 .air-map-marker {
-  min-width: 2.25rem;
-  min-height: 2.25rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
 }
 
-.air-map-marker-risk::after {
-  content: '';
-  position: absolute;
-  inset: -0.45rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(248, 113, 113, 0.62);
-  animation: air-map-pulse 1.9s ease-out infinite;
+.station-disclosure {
+  border-top: 1px solid #d7e2de;
+  color: #24473e;
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
-@keyframes air-map-pulse {
-  0% {
-    opacity: 0.85;
-    transform: scale(0.72);
-  }
+.station-disclosure > summary {
+  min-height: 2.75rem;
+  padding: 0.75rem 0;
+  cursor: pointer;
+  font-weight: 700;
+}
 
-  100% {
-    opacity: 0;
-    transform: scale(1.38);
-  }
+.station-disclosure > summary::marker {
+  color: #0f766e;
+}
+
+.station-disclosure > summary:hover {
+  color: #0f766e;
+}
+
+.explorer-field {
+  display: block;
+  min-width: 0;
+  color: #36544c;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.explorer-field > span:first-child {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.explorer-field input,
+.explorer-field select {
+  min-width: 0;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid #b8cbc4;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.625rem 0.75rem;
+  color: #10211c;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.explorer-field input[type="search"] {
+  padding-left: 2.25rem;
+}
+
+input::placeholder {
+  color: #64748b;
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .air-map-marker {
-    transition: none;
-  }
-
-  .air-map-marker-risk::after {
-    animation: none;
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
   }
 }
 
+summary:focus-visible,
+[tabindex="-1"]:focus-visible,
 button:focus-visible,
 a:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 3px solid rgb(15 118 110 / 0.48);
+  outline: 3px solid #0f766e;
   outline-offset: 2px;
 }

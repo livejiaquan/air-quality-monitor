@@ -174,3 +174,17 @@ Independent outcomes:
 - Mission Guardian: P0 repository milestone GO; public production and mission-achieved claims remain NO-GO.
 
 Public blockers remain external/outcome work, not simulated completion: product-owned MOENV key, remote and protected Pages environment, actual refresh-to-deploy smoke, 72-hour soak, station type/address/representativeness, five unfamiliar-user task tests, and a real domain with canonical/OG/sitemap/DNS/HTTPS verification.
+
+
+## 2026-10-02｜所在地測站閱讀與探索精修
+
+- 基底：`codex/aqi-noncurrent-map` 的 `f3394a372535e4622b3e21c73cd0e338ba978aac`，逐檔 Git blob hash 確認後修改。未搬入 production／visual 分支的快取或覆蓋其更新。
+- 調整閱讀順序為選擇 → 結果 → 示意分布，DOM 與視覺順序一致；三欄從 xl 開始，取消可能撐破中型螢幕的固定最小欄寬。
+- 來源時間、圖例、站名、資料狀態使用可讀字級與可換行版面。圖例保留 6 個當期級距及灰色虛線的非當期說明；地圖標記與主要互動目標至少 44px。
+- 抽出測站結果、發布時間及污染物讀數共用元件。卡片保留數值與來源摘要，原生 disclosure 才展開 6 項污染物與分族群提醒，避免初始列表被重複細節淹沒。
+- 修正代表測站選取只更新 station、未更新 county 的不一致。探索卡片也可選取同一筆測站並返回所選結果區。
+- 增加當期／非當期篩選、可見欄位名稱、即時結果數、每頁 12 筆與清除操作；以縣市／站名排序，避免把過期高 AQI 排成現在風險排行。
+- 保留來源分類、發布時間、3 小時逐站時效、未來時間容忍規則及健康提示內容；未改資料正規化、快取、網路流程、production gate 或部署工作流。
+- 本機檢查：lint、typecheck、95 tests、production build 通過；新增 16 個篩選／render contract 案例，原有 79 案例全數保留。依 lockfile 核對所有已安裝的非 optional 套件版本一致；本機 Node 24，CI 使用 Node 22 並執行 npm ci。
+- 自動化證據包含 stale／缺時／異常／sample／fallback 不得產生現在建議、到期後當期篩選失效、缺值與 0 區別、完整圖例、長站名、原生 disclosure、focusable result target、空資料與載入失敗。HTML assertions 不等同實際鍵盤操作或螢幕閱讀器測試。
+- 未完成的驗收：本輪無可用的核准渲染預覽，未取得各 viewport、200% 縮放、鍵盤全流程、動態開合／反覆篩選、refresh interruption 的畫面證據。不得宣稱視覺驗收通過；發布範圍只限既有開發分支，不建立 PR、merge 或 deploy。
