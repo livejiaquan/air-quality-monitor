@@ -22,7 +22,7 @@ const COMPACT_BELOW_ZOOM = 8.5;
 
 // Pin footprints (px) used for collision avoidance; match .aqi-pin in air-map.css.
 const PIN_BOX = { width: 36, height: 24, gap: 4 };
-const COMPACT_PIN_BOX = { width: 28, height: 18, gap: 3 };
+const COMPACT_PIN_BOX = { width: 32, height: 20, gap: 4 };
 
 type MarkerState = Pick<AirMapProps, 'stations' | 'selectedId' | 'canShowCurrent'>;
 
@@ -118,7 +118,11 @@ export function AirMap({ stations, selectedId, canShowCurrent, onSelect }: AirMa
     drawMarkers();
   }, [stations, selectedId, canShowCurrent, drawMarkers]);
 
+  // Pan only when the visitor changes station, so the first view always shows all of Taiwan.
+  const lastPannedIdRef = useRef(selectedId);
   useEffect(() => {
+    if (lastPannedIdRef.current === selectedId) return;
+    lastPannedIdRef.current = selectedId;
     const map = mapRef.current;
     const station = stations.find((item) => item.siteId === selectedId);
     if (!map || !station || typeof station.latitude !== 'number' || typeof station.longitude !== 'number') return;

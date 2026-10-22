@@ -2,6 +2,7 @@ import { MapPin, Search, X } from 'lucide-react';
 import { useId, useMemo, useRef, useState } from 'react';
 import type { AqiStationRecord } from '../lib/aqi';
 import { AQI_SWATCHES } from '../lib/palette';
+import { getQuickPickStations } from '../lib/stationSelection';
 
 type StationPickerProps = {
   stations: AqiStationRecord[];
@@ -56,8 +57,8 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
       <label htmlFor={`${listId}-input`} className="sr-only">
         搜尋測站或縣市
       </label>
-      <div className="flex h-12 items-center gap-2 rounded-control border border-line bg-surface px-3.5 shadow-sm transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15">
-        <Search aria-hidden="true" className="h-[18px] w-[18px] shrink-0 text-faint" />
+      <div className="flex h-12 items-center gap-2 rounded-control border border-line bg-surface px-4 shadow-sm transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15">
+        <Search aria-hidden="true" className="h-5 w-5 shrink-0 text-faint" />
         <input
           ref={inputRef}
           id={`${listId}-input`}
@@ -69,7 +70,7 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
           aria-activedescendant={open && matches[active] ? `${listId}-${matches[active].siteId}` : undefined}
           autoComplete="off"
           enterKeyHint="search"
-          placeholder={selected ? `目前：${selected.county} ${selected.stationName}，輸入以更換` : '輸入站名或縣市，例如「板橋」「臺中」'}
+          placeholder={selected ? `目前：${selected.stationName}，輸入以更換` : '搜尋站名或縣市'}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -79,7 +80,7 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
           onKeyDown={onKeyDown}
-          className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-faint focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+          className="h-full min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-faint focus:outline-none [&::-webkit-search-cancel-button]:hidden"
         />
         {selected && (
           <button
@@ -97,10 +98,10 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
           id={`${listId}-list`}
           role="listbox"
           aria-label="符合的測站"
-          className="absolute inset-x-0 top-[calc(100%+6px)] z-[1100] max-h-80 overflow-auto rounded-control border border-line bg-surface p-1.5 shadow-card"
+          className="absolute inset-x-0 top-[calc(100%+8px)] z-[1100] max-h-80 overflow-auto rounded-control border border-line bg-surface p-2 shadow-card"
         >
           {matches.length === 0 ? (
-            <li className="px-3 py-3 text-sm text-muted">找不到「{query}」，試試其他站名或縣市。</li>
+            <li className="px-3 py-3 text-base text-muted">找不到「{query}」，試試其他站名或縣市。</li>
           ) : (
             matches.map((station, index) => {
               const live = canShowCurrent && !station.isStale;
@@ -114,15 +115,15 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => choose(station)}
                   onMouseEnter={() => setActive(index)}
-                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 ${index === active ? 'bg-sunken' : ''}`}
+                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 ${index === active ? 'bg-sunken' : ''}`}
                 >
                   <MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-faint" />
                   <span className="min-w-0 flex-1 truncate">
-                    <span className="font-semibold">{station.stationName}</span>
+                    <span className="text-base font-semibold">{station.stationName}</span>
                     <span className="ml-2 text-sm text-muted">{station.county}</span>
                   </span>
                   <span
-                    className="tabular min-w-[2.5rem] rounded-md px-1.5 py-0.5 text-center text-xs font-bold"
+                    className="tabular min-w-[2.5rem] rounded-md px-2 py-1 text-center text-sm font-bold"
                     style={{ background: swatch.fill, color: swatch.ink }}
                   >
                     {station.aqi}
@@ -137,39 +138,28 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
   );
 }
 
-// One major-city station per region so a first visit can reach a reading in one tap.
-const QUICK_PICKS: Array<[string, string]> = [
-  ['臺北市', '中山'],
-  ['新北市', '板橋'],
-  ['桃園市', '桃園'],
-  ['臺中市', '西屯'],
-  ['臺南市', '臺南'],
-  ['高雄市', '前金']
-];
-
 export function QuickPicks({ stations, onSelect, canShowCurrent }: Omit<StationPickerProps, 'selected'>) {
-  const picks = QUICK_PICKS.map(([county, name]) => stations.find((station) => station.county === county && station.stationName === name)).filter(
-    (station): station is AqiStationRecord => Boolean(station)
-  );
+  const picks = getQuickPickStations(stations);
   if (picks.length === 0) return null;
 
   return (
-    <div className="mt-3">
-      <p className="text-xs font-medium text-faint">或從主要城市開始</p>
-      <ul className="mt-2 flex flex-wrap gap-2">
+    <div className="flex min-w-0 items-center gap-2">
+      <p className="shrink-0 text-sm text-muted lg:sr-only">快速切換</p>
+      {/* One swipeable row on phones so the focal AQI stays high on the first screen. */}
+      <ul className="-my-1 -mr-4 flex min-w-0 gap-2 overflow-x-auto py-1 pr-4 [scrollbar-width:none] sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0 [&::-webkit-scrollbar]:hidden">
         {picks.map((station) => {
           const live = canShowCurrent && !station.isStale;
           const swatch = AQI_SWATCHES[live ? station.categoryId : 'unknown'];
           return (
-            <li key={station.siteId}>
+            <li key={station.siteId} className="shrink-0">
               <button
                 type="button"
                 onClick={() => onSelect(station)}
-                className="inline-flex h-11 items-center gap-2 rounded-full border border-line bg-surface pl-3.5 pr-1.5 text-sm font-medium transition hover:border-faint hover:bg-sunken"
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-line bg-surface pl-3 pr-1 text-sm font-medium transition hover:border-faint hover:bg-sunken"
                 aria-label={`${station.county}${station.stationName}，AQI ${station.aqi}${live ? `，${station.category.label}` : '，資料過期'}`}
               >
                 {station.county.replace(/[市縣]$/, '')}·{station.stationName}
-                <span className="tabular min-w-[2.25rem] rounded-full px-2 py-1 text-center text-xs font-bold" style={{ background: swatch.fill, color: swatch.ink }}>
+                <span className="tabular min-w-[2.5rem] rounded-full px-2 py-1 text-center text-sm font-bold" style={{ background: swatch.fill, color: swatch.ink }}>
                   {station.aqi}
                 </span>
               </button>

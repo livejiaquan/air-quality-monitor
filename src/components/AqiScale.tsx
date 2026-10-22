@@ -6,7 +6,7 @@ export function AqiScale({ aqi }: { aqi: number | null }) {
   return (
     <div>
       <div className="relative">
-        <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
+        <div className="flex h-3 gap-1 overflow-hidden rounded-full" aria-hidden="true">
           {AQI_SCALE.map((band) => (
             <span key={band.id} className="flex-1" style={{ background: AQI_SWATCHES[band.id].fill, opacity: aqi === null ? 0.35 : 1 }} />
           ))}
@@ -19,7 +19,7 @@ export function AqiScale({ aqi }: { aqi: number | null }) {
           />
         )}
       </div>
-      <div className="tabular mt-1.5 grid grid-cols-6 text-[10px] text-faint" aria-hidden="true">
+      <div className="tabular mt-2 grid grid-cols-6 text-xs text-faint" aria-hidden="true">
         {AQI_SCALE.map((band) => (
           <span key={band.id} className="text-right">
             {band.max}
