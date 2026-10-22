@@ -32,7 +32,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex gap-2 border-b border-line p-3">
+      <div className="flex gap-2 border-b border-line p-4">
         <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-control bg-sunken px-3">
           <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-faint" />
           <span className="sr-only">篩選測站</span>
@@ -41,7 +41,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="篩選站名"
-            className="h-full min-w-0 flex-1 bg-transparent text-sm placeholder:text-faint focus:outline-none"
+            className="h-full min-w-0 flex-1 bg-transparent text-base placeholder:text-faint focus:outline-none"
           />
         </label>
         <label className="sr-only" htmlFor="list-county">
@@ -51,7 +51,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
           id="list-county"
           value={county}
           onChange={(event) => setCounty(event.target.value)}
-          className="h-11 max-w-[7.5rem] rounded-control bg-sunken px-2 text-sm text-ink"
+          className="h-11 max-w-[8rem] rounded-control bg-sunken px-2 text-base text-ink"
         >
           <option value="all">全部縣市</option>
           {counties.map((item) => (
@@ -70,7 +70,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
           {highFirst ? <ArrowDownWideNarrow aria-hidden="true" className="h-4 w-4" /> : <ArrowUpNarrowWide aria-hidden="true" className="h-4 w-4" />}
         </button>
       </div>
-      <p className="px-4 pb-1 pt-2.5 text-xs text-faint" aria-live="polite">
+      <p className="px-4 pb-1 pt-3 text-sm text-faint" aria-live="polite">
         {filtered.length} / {stations.length} 站
       </p>
       <ul className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
@@ -84,17 +84,17 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
                 type="button"
                 onClick={() => onSelect(station)}
                 aria-current={selected ? 'true' : undefined}
-                className={`flex w-full items-center gap-3 rounded-control px-2.5 py-2 text-left transition ${selected ? 'bg-accent/10 ring-1 ring-accent/40' : 'hover:bg-sunken'}`}
+                className={`flex w-full items-center gap-3 rounded-control px-2 py-2 text-left transition ${selected ? 'bg-accent/10 ring-1 ring-accent/40' : 'hover:bg-sunken'}`}
               >
                 <span
-                  className={`tabular grid h-9 w-12 shrink-0 place-items-center rounded-lg text-[15px] font-bold ${live ? '' : 'outline-dashed outline-1 outline-faint'}`}
+                  className={`tabular grid h-10 w-14 shrink-0 place-items-center rounded-lg text-base font-bold ${live ? '' : 'outline-dashed outline-1 outline-faint'}`}
                   style={live ? { background: swatch.fill, color: swatch.ink } : undefined}
                 >
                   <span className={live ? '' : 'text-faint'}>{station.aqi}</span>
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{station.stationName}</span>
-                  <span className="block truncate text-xs text-muted">
+                  <span className="block truncate text-base font-semibold">{station.stationName}</span>
+                  <span className="block truncate text-base text-muted">
                     {station.county}
                     {live ? ` · ${station.category.label}` : ` · 資料過期（${formatHours(station.hoursSinceUpdate)}）`}
                   </span>
@@ -110,10 +110,10 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
 
 export function MapLegend({ dimmed }: { dimmed: boolean }) {
   return (
-    <ul className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted" aria-label="AQI 色階圖例">
+    <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted" aria-label="AQI 色階圖例">
       {AQI_SCALE.map((band) => (
-        <li key={band.id} className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: AQI_SWATCHES[band.id].fill, opacity: dimmed ? 0.4 : 1 }} aria-hidden="true" />
+        <li key={band.id} className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm" style={{ background: AQI_SWATCHES[band.id].fill, opacity: dimmed ? 0.4 : 1 }} aria-hidden="true" />
           <span>
             {band.label}
             <span className="tabular ml-1 text-faint">
@@ -122,12 +122,12 @@ export function MapLegend({ dimmed }: { dimmed: boolean }) {
           </span>
         </li>
       ))}
-      <li className="flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-sm outline-dashed outline-1 outline-faint" aria-hidden="true" />
+      <li className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-sm outline-dashed outline-1 outline-faint" aria-hidden="true" />
         <span>過期</span>
       </li>
-      <li className="flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-faint" aria-hidden="true" />
+      <li className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-full bg-faint" aria-hidden="true" />
         <span>小圓點：放大可看數字</span>
       </li>
     </ul>

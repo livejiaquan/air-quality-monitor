@@ -6,6 +6,19 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: 'class',
   theme: {
+    // The only allowed type scale (visual standard A): 12/14/16/18/22/28/36/48/64/96.
+    fontSize: {
+      xs: ['12px', { lineHeight: '1.5' }],
+      sm: ['14px', { lineHeight: '1.6' }],
+      base: ['16px', { lineHeight: '1.7' }],
+      lg: ['18px', { lineHeight: '1.6' }],
+      xl: ['22px', { lineHeight: '1.4' }],
+      '2xl': ['28px', { lineHeight: '1.3' }],
+      '3xl': ['36px', { lineHeight: '1.2' }],
+      '4xl': ['48px', { lineHeight: '1.1' }],
+      '5xl': ['64px', { lineHeight: '1' }],
+      '6xl': ['96px', { lineHeight: '1' }]
+    },
     extend: {
       fontFamily: {
         sans: ['"PingFang TC"', '"Noto Sans TC"', '"Microsoft JhengHei"', 'system-ui', '-apple-system', 'sans-serif'],

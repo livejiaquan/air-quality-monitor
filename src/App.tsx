@@ -11,6 +11,7 @@ import { recomputeAqiDatasetFreshness, type AqiDataset, type AqiStationRecord } 
 import { loadAqiDataset } from './lib/data';
 import { getDominantPollutant } from './lib/format';
 import { readSavedStationId, saveStationId, useTheme } from './lib/preferences';
+import { getDefaultStation, STATION_SELECTION_GUIDANCE } from './lib/stationSelection';
 
 type LoadState =
   | { status: 'loading'; dataset: null; error: null }
@@ -141,10 +142,13 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
   const [mobileView, setMobileView] = useState<'map' | 'list'>('map');
   const heroRef = useRef<HTMLDivElement>(null);
   const isOfficialSource = dataset.source.kind === 'official-cache';
-  const selectedStation = useMemo<AqiStationRecord | null>(
+  const pickedStation = useMemo<AqiStationRecord | null>(
     () => records.find((record) => record.siteId === selectedStationId) ?? null,
     [records, selectedStationId]
   );
+  // Until the visitor picks a station, the focal card shows a labelled default (a major city).
+  const defaultStation = useMemo(() => getDefaultStation(records), [records]);
+  const focalStation = pickedStation ?? defaultStation;
   const currentRecords = useMemo(
     () => (isOfficialSource ? records.filter((record) => !record.isStale) : []),
     [isOfficialSource, records]
@@ -186,15 +190,15 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
   const revealStation = useCallback((station: AqiStationRecord) => selectStation(station, { reveal: true }), [selectStation]);
 
   return (
-    <main id="main-content" className="mx-auto max-w-6xl space-y-4 px-4 pb-10 pt-4 sm:space-y-5 sm:px-6 sm:pt-6">
+    <main id="main-content" className="mx-auto max-w-[1200px] space-y-6 px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
       {statusMessages.length > 0 && (
         <section
           role="status"
           aria-live="polite"
-          className={`flex gap-3 rounded-2xl px-4 py-3 text-sm leading-6 ${isSevere ? 'bg-warnbg text-warn' : 'border border-line bg-surface text-muted'}`}
+          className={`flex gap-3 rounded-card px-4 py-3 text-base sm:px-6 ${isSevere ? 'bg-warnbg text-warn' : 'bg-surface text-muted ring-1 ring-line'}`}
         >
-          <AlertTriangle aria-hidden="true" className="mt-1 h-4 w-4 shrink-0" />
-          <div className="space-y-0.5">
+          <AlertTriangle aria-hidden="true" className="mt-1 h-5 w-5 shrink-0" />
+          <div className="space-y-1">
             {statusMessages.map((message) => (
               <p key={message}>{message}</p>
             ))}
@@ -208,25 +212,30 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
       )}
 
       <div ref={heroRef} className="scroll-mt-20">
-        <StationHero
-          dataset={dataset}
-          station={selectedStation}
-          picker={
-            <>
-              <StationPicker stations={records} selected={selectedStation} onSelect={selectStation} canShowCurrent={isOfficialSource} />
-              {!selectedStation && <QuickPicks stations={records} onSelect={selectStation} canShowCurrent={isOfficialSource} />}
-            </>
-          }
-        />
+        {focalStation && (
+          <StationHero
+            dataset={dataset}
+            station={focalStation}
+            isDefault={!pickedStation}
+            picker={
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
+                <div className="lg:w-60 lg:shrink-0">
+                  <StationPicker stations={records} selected={pickedStation} onSelect={selectStation} canShowCurrent={isOfficialSource} />
+                </div>
+                <QuickPicks stations={records} onSelect={selectStation} canShowCurrent={isOfficialSource} />
+              </div>
+            }
+          />
+        )}
       </div>
 
-      <section aria-labelledby="map-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-4 sm:px-6">
+      <section aria-labelledby="map-heading" className="overflow-hidden rounded-card ring-1 ring-line bg-surface shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6">
           <div>
-            <h2 id="map-heading" className="text-lg font-bold">全台測站</h2>
-            <p className="text-sm text-muted">點地圖上的數字或列表中的測站，即可查看詳細資料。</p>
+            <h2 id="map-heading" className="text-xl font-bold">全台測站</h2>
+            <p className="mt-1 text-sm text-muted">點地圖上的數字或列表中的測站，即可查看詳細資料。</p>
           </div>
-          <div className="flex rounded-control bg-sunken p-1 text-sm font-semibold lg:hidden" role="tablist" aria-label="切換地圖或列表">
+          <div className="flex rounded-control bg-sunken p-1 text-base font-semibold lg:hidden" role="tablist" aria-label="切換地圖或列表">
             {(['map', 'list'] as const).map((view) => (
               <button
                 key={view}
@@ -234,29 +243,29 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
                 role="tab"
                 aria-selected={mobileView === view}
                 onClick={() => setMobileView(view)}
-                className={`h-11 rounded-lg px-5 transition ${mobileView === view ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
+                className={`h-11 rounded-lg px-6 transition ${mobileView === view ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
               >
                 {view === 'map' ? '地圖' : '列表'}
               </button>
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)] border-t border-line lg:h-[560px] lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid grid-cols-[minmax(0,1fr)] border-t border-line lg:h-[560px] lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className={`relative h-[62vh] max-h-[560px] min-h-[380px] lg:block lg:h-full lg:max-h-none ${mobileView === 'map' ? 'block' : 'hidden'}`}>
-            <AirMap stations={records} selectedId={selectedStationId} canShowCurrent={isOfficialSource} onSelect={selectStation} />
+            <AirMap stations={records} selectedId={focalStation?.siteId ?? null} canShowCurrent={isOfficialSource} onSelect={selectStation} />
           </div>
           <div className={`h-[62vh] max-h-[560px] min-h-[380px] border-line lg:block lg:h-full lg:max-h-none lg:border-l ${mobileView === 'list' ? 'block' : 'hidden'}`}>
-            <StationList stations={records} selectedId={selectedStationId} canShowCurrent={isOfficialSource} onSelect={revealStation} />
+            <StationList stations={records} selectedId={focalStation?.siteId ?? null} canShowCurrent={isOfficialSource} onSelect={revealStation} />
           </div>
         </div>
-        <div className="border-t border-line px-4 py-3 sm:px-6">
+        <div className="border-t border-line p-4 sm:px-6">
           <MapLegend dimmed={!hasCurrentData} />
         </div>
       </section>
 
       {hasCurrentData && <Overview summary={summary} dominantPollutant={dominantPollutant} />}
 
-      <footer className="space-y-2 px-1 pt-2 text-xs leading-5 text-faint">
+      <footer className="space-y-2 border-t border-line pt-6 text-sm text-muted">
         <p>
           資料來源：環境部「
           <a className="font-semibold text-muted underline underline-offset-2" href="https://data.moenv.gov.tw/dataset/detail/AQX_P_432" target="_blank" rel="noreferrer">
@@ -267,6 +276,12 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
             政府資料開放授權條款第 1 版
           </a>
           再利用；每小時自動更新。本站非環境部官方網站，即時資料未經品保，健康提示僅供生活參考，不是醫療建議。
+        </p>
+        <p>
+          {STATION_SELECTION_GUIDANCE.text}{' '}
+          <a className="font-semibold text-accent underline underline-offset-2" href={STATION_SELECTION_GUIDANCE.sourceUrl} target="_blank" rel="noreferrer">
+            了解測站類型
+          </a>
         </p>
         <p>
           地圖 © OpenStreetMap 貢獻者 ·{' '}

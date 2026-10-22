@@ -13,14 +13,14 @@ type SiteHeaderProps = {
 export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefreshing = false }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-[1000] border-b border-line/80 bg-canvas/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
-        <a href="./" className="flex h-11 min-w-0 items-center gap-2.5" aria-label="台灣空氣品質 首頁">
+      <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 sm:px-6">
+        <a href="./" className="flex h-11 min-w-0 items-center gap-3" aria-label="台灣空氣品質 首頁">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-white dark:text-canvas">
             <Wind aria-hidden="true" className="h-[18px] w-[18px]" />
           </span>
-          <span className="truncate text-[15px] font-bold tracking-tight">台灣空氣品質</span>
+          <span className="truncate text-base font-bold tracking-tight sm:text-lg">台灣空氣品質</span>
         </a>
-        <div className="-mr-2 ml-auto flex items-center gap-0.5">
+        <div className="-mr-2 ml-auto flex items-center gap-1">
           {dataset && <FreshnessPill dataset={dataset} />}
           {onRefresh && (
             <button
@@ -56,18 +56,21 @@ function FreshnessPill({ dataset }: { dataset: AqiDataset }) {
   const label = !official
     ? '展示資料'
     : fresh
-      ? `${formatPublishLabel(summary.newestPublishTimeISO)} 發布`
+      ? formatPublishLabel(summary.newestPublishTimeISO)
       : `已過期 ${formatHours(summary.hoursSinceUpdate).replace("前", "")}`;
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
+      className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${
         fresh ? 'bg-sunken text-muted' : 'bg-warnbg text-warn'
       }`}
       title={fresh ? `最新測站資料 ${formatHours(summary.hoursSinceUpdate)}` : '沒有 3 小時內的有效測站資料'}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${fresh ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
-      <span className="tabular">{label}</span>
+      <span className={`h-2 w-2 rounded-full ${fresh ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
+      <span className="tabular">
+        {label}
+        {fresh && <span className="hidden min-[380px]:inline"> 發布</span>}
+      </span>
     </span>
   );
 }

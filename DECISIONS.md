@@ -99,3 +99,9 @@ Reason: Research on AirNow, IQAir, aqicn, PurpleAir and the MOENV monitor (`docs
 Decision: `main` is the only source. One Pages workflow fetches the MOENV snapshot server-side with the Actions secret, validates it, builds, and deploys it without committing the cache back.
 
 Reason: Production was previously built from `codex/unified-visual-refresh` through a bridge workflow, and the hourly cache commits buried the history in bot commits. Baking the snapshot into the artifact keeps the key out of the bundle, keeps the history clean, and stays fail-closed: when any step fails, the previous deployment stays online.
+
+## 2026-10-22 - One Focal AQI and a Fixed Type Scale
+
+Decision: The first screen always shows one station's AQI as the page's single focal point: 96px on desktop and 64px on mobile, inside a category-coloured tile. Until the visitor picks a station, the tile shows a labelled default (臺北市中山, the first available major-city quick pick). Font sizes are restricted to 12/14/16/18/22/28/36/48/64/96 by overriding Tailwind's `fontSize`, spacing follows the 8pt scale, and every card shares one container edge and one padding value.
+
+Reason: Visitors reported "no focal point, nothing aligned, text too small". The audit backed this up: 71% of the text was 12px, the largest first-screen text was a 24px tagline, and blocks used five different left edges. The default is labelled and makes no "nearest station" claim, so it keeps the earlier no-geolocation rule. Measured benchmarks are in `docs/design-research.md` section 8, and the before/after evidence is in `docs/visual-audit.md`.
