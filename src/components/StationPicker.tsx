@@ -56,7 +56,7 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
       <label htmlFor={`${listId}-input`} className="sr-only">
         搜尋測站或縣市
       </label>
-      <div className="flex h-12 items-center gap-2 rounded-xl border border-line bg-surface px-3.5 shadow-sm transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15">
+      <div className="flex h-12 items-center gap-2 rounded-control border border-line bg-surface px-3.5 shadow-sm transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15">
         <Search aria-hidden="true" className="h-[18px] w-[18px] shrink-0 text-faint" />
         <input
           ref={inputRef}
@@ -85,7 +85,7 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
           <button
             type="button"
             onClick={() => onSelect(null)}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-faint hover:bg-sunken hover:text-ink"
+            className="-mr-2 grid h-11 w-11 shrink-0 place-items-center rounded-control text-faint transition hover:bg-sunken hover:text-ink"
             aria-label="清除所選測站"
           >
             <X aria-hidden="true" className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
           id={`${listId}-list`}
           role="listbox"
           aria-label="符合的測站"
-          className="absolute inset-x-0 top-[calc(100%+6px)] z-[1100] max-h-80 overflow-auto rounded-xl border border-line bg-surface p-1.5 shadow-card"
+          className="absolute inset-x-0 top-[calc(100%+6px)] z-[1100] max-h-80 overflow-auto rounded-control border border-line bg-surface p-1.5 shadow-card"
         >
           {matches.length === 0 ? (
             <li className="px-3 py-3 text-sm text-muted">找不到「{query}」，試試其他站名或縣市。</li>
@@ -114,7 +114,7 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => choose(station)}
                   onMouseEnter={() => setActive(index)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 ${index === active ? 'bg-sunken' : ''}`}
+                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 ${index === active ? 'bg-sunken' : ''}`}
                 >
                   <MapPin aria-hidden="true" className="h-4 w-4 shrink-0 text-faint" />
                   <span className="min-w-0 flex-1 truncate">
@@ -133,6 +133,50 @@ export function StationPicker({ stations, selected, onSelect, canShowCurrent }: 
           )}
         </ul>
       )}
+    </div>
+  );
+}
+
+// One major-city station per region so a first visit can reach a reading in one tap.
+const QUICK_PICKS: Array<[string, string]> = [
+  ['臺北市', '中山'],
+  ['新北市', '板橋'],
+  ['桃園市', '桃園'],
+  ['臺中市', '西屯'],
+  ['臺南市', '臺南'],
+  ['高雄市', '前金']
+];
+
+export function QuickPicks({ stations, onSelect, canShowCurrent }: Omit<StationPickerProps, 'selected'>) {
+  const picks = QUICK_PICKS.map(([county, name]) => stations.find((station) => station.county === county && station.stationName === name)).filter(
+    (station): station is AqiStationRecord => Boolean(station)
+  );
+  if (picks.length === 0) return null;
+
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-medium text-faint">或從主要城市開始</p>
+      <ul className="mt-2 flex flex-wrap gap-2">
+        {picks.map((station) => {
+          const live = canShowCurrent && !station.isStale;
+          const swatch = AQI_SWATCHES[live ? station.categoryId : 'unknown'];
+          return (
+            <li key={station.siteId}>
+              <button
+                type="button"
+                onClick={() => onSelect(station)}
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-line bg-surface pl-3.5 pr-1.5 text-sm font-medium transition hover:border-faint hover:bg-sunken"
+                aria-label={`${station.county}${station.stationName}，AQI ${station.aqi}${live ? `，${station.category.label}` : '，資料過期'}`}
+              >
+                {station.county.replace(/[市縣]$/, '')}·{station.stationName}
+                <span className="tabular min-w-[2.25rem] rounded-full px-2 py-1 text-center text-xs font-bold" style={{ background: swatch.fill, color: swatch.ink }}>
+                  {station.aqi}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

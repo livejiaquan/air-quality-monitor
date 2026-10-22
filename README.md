@@ -5,20 +5,20 @@
 搜尋你生活或活動區域的測站，就能看到環境部最新 AQI、各污染物濃度，以及分開給一般民眾和敏感族群的活動建議；全台測站地圖每小時更新。資料過期時會清楚標示，並暫停「現在」的結論，不會用舊資料假裝即時。
 
 <p>
-  <img src="docs/screenshots/after-desktop.jpg" alt="桌面版：我的測站卡片，顯示板橋 AQI 51 普通、色階條與活動建議" width="62%" />
-  <img src="docs/screenshots/after-mobile.jpg" alt="手機版：我的測站卡片" width="30%" />
+  <img src="docs/screenshots/desktop-1440-light-station.jpg" alt="桌面版：我的測站卡片，顯示臺中西屯 AQI 122 對敏感族群不健康、色階條、活動建議與污染物" width="62%" />
+  <img src="docs/screenshots/mobile-390-dark-home.jpg" alt="手機深色模式：主要城市快速選站與全台現況" width="30%" />
 </p>
 
 ## 功能
 
-- **我的測站**：輸入站名或縣市即可搜尋（「台／臺」都能用），選過的測站會記住，下次打開直接顯示。
+- **我的測站**：輸入站名或縣市即可搜尋（「台／臺」都能用），或一鍵選六都主要測站；選過的測站會記住，下次打開直接顯示。
 - **大數字＋類別＋色階條**：AQI 數字、官方類別名稱和六段色階條同時呈現，顏色不是唯一線索，色盲使用者也能判讀。
 - **全台地圖與列表**：Leaflet 地圖上每個測站都是一顆數字標記；手機可切換地圖／列表，桌面兩者並排。
 - **資料時效**：頁首顯示最新發布時間；超過 3 小時的測站改成灰色虛線樣式，並排除於排行與建議之外。
 - **深淺色模式**：預設跟隨系統，也可以手動切換。
 - **全台概況**：類別分布與各縣市最高值，只計算有效且新鮮的測站。
 
-設計研究（環境部監測網、IQAir、aqicn、PurpleAir、AirNow 等產品比較，以及採用的取捨）見 [docs/design-research.md](./docs/design-research.md)。
+使用者研究（persona、任務、非功能需求、裝置評估）見 [docs/ux-research.md](./docs/ux-research.md)；設計研究（同類產品與開源實作比較、主流前端參考、設計語言）見 [docs/design-research.md](./docs/design-research.md)。
 
 ## 架構
 

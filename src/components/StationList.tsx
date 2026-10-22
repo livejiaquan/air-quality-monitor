@@ -33,7 +33,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex gap-2 border-b border-line p-3">
-        <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg bg-sunken px-3">
+        <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-control bg-sunken px-3">
           <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-faint" />
           <span className="sr-only">篩選測站</span>
           <input
@@ -51,7 +51,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
           id="list-county"
           value={county}
           onChange={(event) => setCounty(event.target.value)}
-          className="h-10 max-w-[7.5rem] rounded-lg bg-sunken px-2 text-sm text-ink"
+          className="h-11 max-w-[7.5rem] rounded-control bg-sunken px-2 text-sm text-ink"
         >
           <option value="all">全部縣市</option>
           {counties.map((item) => (
@@ -63,7 +63,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
         <button
           type="button"
           onClick={() => setHighFirst((value) => !value)}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-sunken text-muted hover:text-ink"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-sunken text-muted transition hover:text-ink"
           aria-label={highFirst ? '目前 AQI 由高到低，切換為由低到高' : '目前 AQI 由低到高，切換為由高到低'}
           title={highFirst ? 'AQI 高 → 低' : 'AQI 低 → 高'}
         >
@@ -84,7 +84,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
                 type="button"
                 onClick={() => onSelect(station)}
                 aria-current={selected ? 'true' : undefined}
-                className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition ${selected ? 'bg-accent/10 ring-1 ring-accent/40' : 'hover:bg-sunken'}`}
+                className={`flex w-full items-center gap-3 rounded-control px-2.5 py-2 text-left transition ${selected ? 'bg-accent/10 ring-1 ring-accent/40' : 'hover:bg-sunken'}`}
               >
                 <span
                   className={`tabular grid h-9 w-12 shrink-0 place-items-center rounded-lg text-[15px] font-bold ${live ? '' : 'outline-dashed outline-1 outline-faint'}`}

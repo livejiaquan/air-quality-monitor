@@ -2,7 +2,7 @@ import { Clock3, HeartPulse, Info, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AqiDataset, AqiStationRecord } from '../lib/aqi';
 import { formatHours, formatNumber, formatPublishLabel } from '../lib/format';
-import { AQI_SWATCHES } from '../lib/palette';
+import { AQI_SCALE, AQI_SWATCHES } from '../lib/palette';
 import { STATION_SELECTION_GUIDANCE } from '../lib/stationSelection';
 import { AqiScale } from './AqiScale';
 
@@ -21,11 +21,21 @@ const POLLUTANTS: Array<[keyof AqiStationRecord['pollutantValues'], string, stri
   ['co', 'CO', 'ppm', 2]
 ];
 
+// Order matters: 細懸浮微粒 (PM2.5) must match before 懸浮微粒 (PM10).
+const MAIN_POLLUTANT_KEYS: Array<[RegExp, keyof AqiStationRecord['pollutantValues']]> = [
+  [/細懸浮微粒|PM2\.5/i, 'pm25'],
+  [/懸浮微粒|PM10/i, 'pm10'],
+  [/臭氧|O3/i, 'o3'],
+  [/二氧化氮|NO2/i, 'no2'],
+  [/二氧化硫|SO2/i, 'so2'],
+  [/一氧化碳|CO/i, 'co']
+];
+
 export function StationHero({ dataset, station, picker }: StationHeroProps) {
   const official = dataset.source.kind === 'official-cache';
 
   return (
-    <section aria-labelledby="hero-heading" className="overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
+    <section aria-labelledby="hero-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
       <div className="p-4 sm:p-6">
         <h1 id="hero-heading" className="text-xl font-bold tracking-tight sm:text-2xl">
           {station ? '我的測站' : '你那邊的空氣如何？'}
@@ -47,6 +57,7 @@ export function StationHero({ dataset, station, picker }: StationHeroProps) {
 function StationReading({ station, official }: { station: AqiStationRecord; official: boolean }) {
   const canAdvise = official && !station.isStale;
   const swatch = AQI_SWATCHES[canAdvise ? station.categoryId : 'unknown'];
+  const mainKey = MAIN_POLLUTANT_KEYS.find(([pattern]) => pattern.test(station.mainPollutant))?.[1];
 
   return (
     <div aria-live="polite" className="border-t border-line">
@@ -56,7 +67,7 @@ function StationReading({ station, official }: { station: AqiStationRecord; offi
       >
         <div className="flex items-center gap-4 sm:gap-5">
           <div
-            className={`grid h-28 w-28 shrink-0 place-items-center rounded-3xl sm:h-32 sm:w-32 ${canAdvise ? 'shadow-card' : 'border-2 border-dashed border-faint/60 bg-surface'}`}
+            className={`grid h-28 w-28 shrink-0 place-items-center rounded-card sm:h-32 sm:w-32 ${canAdvise ? 'shadow-card' : 'border-2 border-dashed border-faint/60 bg-surface'}`}
             style={canAdvise ? { background: swatch.fill, color: swatch.ink } : undefined}
           >
             <div className="text-center">
@@ -108,15 +119,25 @@ function StationReading({ station, official }: { station: AqiStationRecord; offi
         )}
 
         <dl className="grid grid-cols-3 gap-2 self-start" aria-label={canAdvise ? '目前污染物濃度' : '快取污染物濃度'}>
-          {POLLUTANTS.map(([key, label, unit, digits]) => (
-            <div key={key} className="rounded-xl bg-sunken px-3 py-2.5">
-              <dt className="text-xs font-semibold text-muted">{label}</dt>
-              <dd className="mt-0.5">
-                <span className="tabular text-lg font-bold">{formatNumber(station.pollutantValues[key], digits)}</span>
-                <span className="ml-1 text-[11px] text-faint">{unit}</span>
-              </dd>
-            </div>
-          ))}
+          {POLLUTANTS.map(([key, label, unit, digits]) => {
+            const isMain = canAdvise && mainKey === key;
+              return (
+              <div
+                key={key}
+                className={`rounded-control px-3 py-2.5 ${isMain ? 'bg-surface ring-2' : 'bg-sunken'}`}
+                style={isMain ? ({ '--tw-ring-color': swatch.fill } as React.CSSProperties) : undefined}
+              >
+                <dt className="text-xs font-semibold text-muted">
+                  {label}
+                  {isMain && <span className="ml-1 text-[10px] font-bold text-ink">主要</span>}
+                </dt>
+                <dd className="mt-0.5">
+                  <span className="tabular text-lg font-bold">{formatNumber(station.pollutantValues[key], digits)}</span>
+                  <span className="ml-1 text-[11px] text-faint">{unit}</span>
+                </dd>
+              </div>
+            );
+          })}
         </dl>
       </div>
     </div>
@@ -145,13 +166,29 @@ function NationalSnapshot({ dataset }: { dataset: AqiDataset }) {
     <div className="border-t border-line bg-sunken/50 px-4 py-5 sm:px-6">
       <p className="text-xs font-semibold uppercase tracking-wider text-faint">全台現況</p>
       {hasCurrent ? (
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          <Stat value={`${healthyShare}%`} label="測站良好或普通" />
-          <Stat value={`${summary.unhealthyStationCount}`} label="測站 AQI 超過 100" />
-          <Stat value={summary.worstStation ? `${summary.worstStation.aqi}` : '--'} label={summary.worstStation ? `最高：${summary.worstStation.stationName}` : '最高值'} />
-        </div>
+        <>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <Stat value={`${healthyShare}%`} label="測站良好或普通" />
+            <Stat value={`${summary.unhealthyStationCount}`} label="測站 AQI 超過 100" />
+            <Stat value={summary.worstStation ? `${summary.worstStation.aqi}` : '--'} label={summary.worstStation ? `最高：${summary.worstStation.stationName}` : '最高值'} />
+          </div>
+          <div className="mt-4">
+            <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={`測站分布：${AQI_SCALE.map((band) => `${band.label} ${summary.categoryCounts[band.id]} 站`).join('、')}`}>
+              {AQI_SCALE.map((band) =>
+                summary.categoryCounts[band.id] ? (
+                  <span key={band.id} style={{ flexGrow: summary.categoryCounts[band.id], background: AQI_SWATCHES[band.id].fill }} />
+                ) : null
+              )}
+            </div>
+            <p className="mt-1.5 text-xs text-faint">{summary.currentStationCount} 個有效測站的類別分布</p>
+          </div>
+        </>
       ) : (
-        <p className="mt-2 text-sm leading-6 text-muted">目前沒有 3 小時內的有效官方資料，全台概況與活動建議暫停。地圖與列表仍可查看各站最後一筆資料。</p>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          {dataset.records.length === 0
+            ? '目前沒有任何測站資料，請稍後再試。'
+            : '目前沒有 3 小時內的有效官方資料，全台概況與活動建議暫停。地圖與列表仍可查看各站最後一筆資料。'}
+        </p>
       )}
       <p className="mt-4 text-xs leading-5 text-faint">
         {STATION_SELECTION_GUIDANCE.text}{' '}

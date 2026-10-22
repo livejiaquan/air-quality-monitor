@@ -56,3 +56,59 @@
 - **Mapbox、Google Maps**：需要 token，違反「key 不進前端」原則。
 - **主動定位**：原本的產品決策是不要求定位、也不宣稱「最近測站」，因為資料沒有站型與代表範圍。這次維持不變。
 - **熱度圖內插**：測站稀疏時，內插出來的顏色會誤導使用者，所以只畫真實測站。
+
+## 5. 開源實作：拿來做什麼、借鏡什麼
+
+本專案**沒有複製任何外部程式碼**，下列專案只參考資訊架構與互動模式。表中的授權在 2026-10-22 以 GitHub API 確認（✅）。
+
+| 專案 | 授權 | 技術 | 用途 | 借鏡 | 不採用 |
+|---|---|---|---|---|---|
+| [openaq/openaq-explorer](https://github.com/openaq/openaq-explorer) | Apache-2.0 ✅ | SolidJS、MapLibre GL、d3 ✅ | 全球開放空品資料的地圖瀏覽器 | 地圖加側邊清單的雙欄結構；選取地點後側欄顯示詳情 | MapLibre 向量圖磚要自建或接第三方 style，bundle 大約多 200 KB；我們的需求用 Leaflet 點陣圖磚就夠 |
+| [immortalmice/Real-time-Air-Quality-Map](https://github.com/immortalmice/Real-time-Air-Quality-Map) | MIT ✅ | JavaScript ✅ | 台灣空污站點與排放源的地圖 | 同樣使用台灣的資料語境（縣市、環境部站名） | 污染源圖層與本產品的任務（看我的測站）無關 |
+| [CivicLabsBelgium/luftdaten_irceline_viewer](https://github.com/CivicLabsBelgium/luftdaten_irceline_viewer) | MIT ✅ | JavaScript ✅ | 比利時官方測站與民間感測器並陳 | 官方資料和民間資料分開標示，強調來源可信度 | 本專案只用官方資料，不混入民間感測器 |
+| [opendata-stuttgart/feinstaub-map-v2](https://github.com/opendata-stuttgart/feinstaub-map-v2)（Sensor.Community 地圖） | 未標示 ✅ | JavaScript ✅ | 全球民間 PM 感測器地圖 | 可切換指標的圖例；長時間沒回報的感測器淡化顯示（對應我們的過期灰化） | **沒有授權，所以不能使用它的程式碼**，只參考概念 |
+| [Leaflet](https://github.com/Leaflet/Leaflet) | BSD-2-Clause | JavaScript | 本專案的地圖引擎（npm 依賴） | `divIcon` 自訂數字標記、鍵盤可聚焦的 marker | — |
+
+改進的地方：上述地圖類專案都以地圖為主角。本專案把「我的測站」放在地圖前面，並把過期狀態當成一級資訊處理，這兩點是它們沒有做到的。
+
+## 6. 主流前端設計：參考了什麼
+
+| 參考 | 觀察 | 落實到本專案 |
+|---|---|---|
+| **Linear** | 中性灰階搭配單一品牌色、1 px 細邊框、資訊密集但層級清楚、深色模式是一等公民 | 卡片用 1 px `line` 邊框加極淡陰影，不用大面積色塊；深淺色共用同一組語意 token |
+| **Vercel（Geist）** | 嚴格的灰階語意（背景、元件、邊框、文字分層）、數字用等寬字、留白大方 | `canvas`、`surface`、`sunken`、`line`、`ink`、`muted`、`faint` 七層中性色；數字一律用 `tabular-nums` |
+| **Stripe** | 精準的字級階層、標題字距收緊、彩色只出現在需要強調的地方 | 只有 AQI 相關元素用彩色，其餘全是中性色；標題用 `tracking-tight` |
+| **Apple 天氣（空品卡）** | 一個大數字、一個類別詞、一句建議，加上一條色階條和一個白點標出目前位置 | 「我的測站」卡片的 AQI 數字方塊、類別、六段色階條與指標點 |
+| **IQAir** | AQI 數字放在彩色方塊裡，類別色就是背景 | AQI 方塊用類別色當底，文字色依對比計算 |
+| **Observable Plot** | 圖表以文字標籤取代圖例、坐標軸極簡 | 分布圖用堆疊長條，下方直接列數字；縣市排行用長條加數字，不另畫坐標軸 |
+| **Radix Colors** | 12 階色票，每階有固定用途（背景、元件、邊框、實色、文字） | 中性 token 依用途命名，而不是依色階命名；AQI 色票另外計算前景色對比 |
+| **shadcn/ui** | 用 CSS 變數定義主題 token（`--background`、`--foreground`、`--muted`、`--border`），Tailwind 引用變數 | `index.css` 在 `:root` 和 `.dark` 各定義一組 RGB 變數，`tailwind.config.ts` 以 `rgb(var(--x) / <alpha>)` 引用，所以透明度修飾也能用 |
+| **Tailwind** | 以 4 px 為基準的間距系統、mobile-first 斷點 | 間距只用 Tailwind 刻度；預設樣式就是手機版，`sm`、`lg` 再往上加 |
+
+## 7. 設計語言（已落實在程式碼中）
+
+**字體**
+- 系統中文字體堆疊：`PingFang TC`（Apple）→ `Noto Sans TC` → `Microsoft JhengHei`（Windows）→ `system-ui`。
+- **不載入網路字型**：中文 webfont 動輒數 MB，會拖慢手機上的 LCP。
+- 數字用 `Inter` 或 `system-ui` 的 `tabular-nums`，讓數字欄位對齊、跳動時寬度不變。
+- 字級：12（說明）／14（次要）／15（內文）／18（區塊標題）／24–30（站名、頁標題）／48–60（AQI 數字）。
+
+**色彩**
+- 中性色：7 個語意 token，淺色與深色各一組（`src/index.css`）。
+- 品牌色：只有一個 `accent`（青綠），用在 logo、連結、焦點環。
+- 警示色：`warn` 與 `warnbg`，只用在資料過期和失敗訊息。
+- AQI 色：官方六色相（`src/lib/palette.ts`），每色都有前景色，色塊上的文字對比 ≥ 4.5:1（計算紀錄見 PR）。
+
+**間距與形狀**
+- 間距以 4 px 為基準：卡片內距手機 16 px、桌面 24 px；區塊間距 16–20 px。
+- 圓角 token：卡片 24 px（`rounded-card`）、控制項 12 px（`rounded-control`）、地圖數字標記 8 px。
+- 陰影只有一個 token：`shadow-card`。
+
+**動效**
+- 只對 `transform`、`opacity`、`background-color` 做轉場；時間 `fast`（120 ms）和 `base`（200 ms），使用 ease-out 曲線。
+- 遵守 `prefers-reduced-motion`：開啟時所有轉場都歸零。
+- 不使用會造成版面跳動的進場動畫。
+
+**觸控與焦點**
+- 所有按鈕、輸入框和分頁的觸控目標至少 44 × 44 px。
+- 焦點環是 3 px 的 `accent`，搭配 2 px offset。

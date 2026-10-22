@@ -6,7 +6,7 @@ import { SiteHeader } from './components/SiteHeader';
 import { ErrorPanel, LoadingDashboard } from './components/StatePanels';
 import { StationHero } from './components/StationHero';
 import { MapLegend, StationList } from './components/StationList';
-import { StationPicker } from './components/StationPicker';
+import { QuickPicks, StationPicker } from './components/StationPicker';
 import { recomputeAqiDatasetFreshness, type AqiDataset, type AqiStationRecord } from './lib/aqi';
 import { loadAqiDataset } from './lib/data';
 import { getDominantPollutant } from './lib/format';
@@ -211,17 +211,22 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
         <StationHero
           dataset={dataset}
           station={selectedStation}
-          picker={<StationPicker stations={records} selected={selectedStation} onSelect={selectStation} canShowCurrent={isOfficialSource} />}
+          picker={
+            <>
+              <StationPicker stations={records} selected={selectedStation} onSelect={selectStation} canShowCurrent={isOfficialSource} />
+              {!selectedStation && <QuickPicks stations={records} onSelect={selectStation} canShowCurrent={isOfficialSource} />}
+            </>
+          }
         />
       </div>
 
-      <section aria-labelledby="map-heading" className="overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
+      <section aria-labelledby="map-heading" className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-4 sm:px-6">
           <div>
             <h2 id="map-heading" className="text-lg font-bold">全台測站</h2>
             <p className="text-sm text-muted">點地圖上的數字或列表中的測站，即可查看詳細資料。</p>
           </div>
-          <div className="flex rounded-xl bg-sunken p-1 text-sm font-semibold lg:hidden" role="tablist" aria-label="切換地圖或列表">
+          <div className="flex rounded-control bg-sunken p-1 text-sm font-semibold lg:hidden" role="tablist" aria-label="切換地圖或列表">
             {(['map', 'list'] as const).map((view) => (
               <button
                 key={view}
@@ -229,7 +234,7 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
                 role="tab"
                 aria-selected={mobileView === view}
                 onClick={() => setMobileView(view)}
-                className={`rounded-lg px-4 py-1.5 transition ${mobileView === view ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
+                className={`h-11 rounded-lg px-5 transition ${mobileView === view ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
               >
                 {view === 'map' ? '地圖' : '列表'}
               </button>

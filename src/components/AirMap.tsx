@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import './air-map.css';
 import { useEffect, useRef } from 'react';
 import type { AqiStationRecord } from '../lib/aqi';
 import { AQI_SWATCHES } from '../lib/palette';
@@ -16,7 +17,7 @@ const TAIWAN_BOUNDS = L.latLngBounds([21.85, 119.4], [25.35, 122.05]);
 // Standard OSM tiles need no key; index.css mutes them (and inverts them in dark mode).
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-const COMPACT_BELOW_ZOOM = 7.75;
+const COMPACT_BELOW_ZOOM = 8.5;
 
 export function AirMap({ stations, selectedId, canShowCurrent, onSelect }: AirMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);

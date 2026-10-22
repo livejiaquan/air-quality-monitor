@@ -13,14 +13,14 @@ type SiteHeaderProps = {
 export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefreshing = false }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-[1000] border-b border-line/80 bg-canvas/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
-        <a href="./" className="flex min-w-0 items-center gap-2.5" aria-label="台灣空氣品質 首頁">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
+        <a href="./" className="flex h-11 min-w-0 items-center gap-2.5" aria-label="台灣空氣品質 首頁">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-white dark:text-canvas">
             <Wind aria-hidden="true" className="h-[18px] w-[18px]" />
           </span>
           <span className="truncate text-[15px] font-bold tracking-tight">台灣空氣品質</span>
         </a>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="-mr-2 ml-auto flex items-center gap-0.5">
           {dataset && <FreshnessPill dataset={dataset} />}
           {onRefresh && (
             <button
@@ -29,7 +29,7 @@ export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefresh
               disabled={isRefreshing}
               aria-label={isRefreshing ? '正在重新讀取資料' : '重新讀取資料'}
               title="重新讀取資料"
-              className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-sunken hover:text-ink disabled:cursor-wait"
+              className="grid h-11 w-11 place-items-center rounded-control text-muted transition hover:bg-sunken hover:text-ink disabled:cursor-wait"
             >
               <RotateCw aria-hidden="true" className={`h-[18px] w-[18px] ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -39,7 +39,7 @@ export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefresh
             onClick={onToggleTheme}
             aria-label={theme === 'dark' ? '切換為淺色模式' : '切換為深色模式'}
             title={theme === 'dark' ? '淺色模式' : '深色模式'}
-            className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-sunken hover:text-ink"
+            className="grid h-11 w-11 place-items-center rounded-control text-muted transition hover:bg-sunken hover:text-ink"
           >
             {theme === 'dark' ? <Sun aria-hidden="true" className="h-[18px] w-[18px]" /> : <Moon aria-hidden="true" className="h-[18px] w-[18px]" />}
           </button>

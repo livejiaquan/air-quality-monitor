@@ -8,7 +8,7 @@ export function Overview({ summary, dominantPollutant }: { summary: AqiSummary; 
 
   return (
     <section aria-labelledby="overview-heading" className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-      <div className="rounded-3xl border border-line bg-surface p-5 shadow-card sm:p-6">
+      <div className="rounded-card border border-line bg-surface p-5 shadow-card sm:p-6">
         <h2 id="overview-heading" className="text-lg font-bold">全台分布</h2>
         <p className="mt-1 text-sm text-muted">
           {total} 個有效測站 · 中位數 AQI <span className="tabular">{formatNumber(summary.medianAqi)}</span> · 主要污染物 {dominantPollutant}
@@ -31,7 +31,7 @@ export function Overview({ summary, dominantPollutant }: { summary: AqiSummary; 
         </dl>
       </div>
 
-      <div className="rounded-3xl border border-line bg-surface p-5 shadow-card sm:p-6">
+      <div className="rounded-card border border-line bg-surface p-5 shadow-card sm:p-6">
         <h2 className="text-lg font-bold">各縣市最高值</h2>
         <p className="mt-1 text-sm text-muted">每個縣市取 AQI 最高的有效測站；長條越長越差。</p>
         <ol className="mt-4 gap-x-8 sm:columns-2">
