@@ -54,6 +54,7 @@
 | 深淺色 | ✅ | 跟隨系統，可手動切換；head 內聯腳本在首次繪製前套用主題，不會閃白；地圖圖磚同步反轉 |
 | 沒有版面跳動 | ✅ | CLS：行動版 0.004、桌面 0.007；地圖容器高度固定 |
 | 鍵盤與螢幕閱讀器 | ✅ | combobox 支援上下鍵、Enter、Esc；地圖標記可聚焦；地圖有對等的列表；狀態訊息用 `role=status` |
+| 地圖標記可讀 | ✅ | 依螢幕像素做碰撞避讓（`src/lib/pinLayout.ts`，有單元測試）：優先顯示所選測站，再來是有效資料、AQI 較高者；會重疊的改成同色小圓點，放大後展開成數字。1440 px：30 個數字＋54 個圓點；390 px：24＋60 |
 | 無水平捲動 | ✅ | 375 與 390 px 下 `scrollWidth === clientWidth` |
 
 **Lighthouse 13.5.0**（本機 `vite preview`，數字依序為 performance／accessibility／best practices／SEO）：

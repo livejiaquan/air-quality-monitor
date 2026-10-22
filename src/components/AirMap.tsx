@@ -1,9 +1,10 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './air-map.css';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { AqiStationRecord } from '../lib/aqi';
 import { AQI_SWATCHES } from '../lib/palette';
+import { selectVisiblePins } from '../lib/pinLayout';
 
 type AirMapProps = {
   stations: AqiStationRecord[];
@@ -19,14 +20,69 @@ const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const COMPACT_BELOW_ZOOM = 8.5;
 
+// Pin footprints (px) used for collision avoidance; match .aqi-pin in air-map.css.
+const PIN_BOX = { width: 36, height: 24, gap: 4 };
+const COMPACT_PIN_BOX = { width: 28, height: 18, gap: 3 };
+
+type MarkerState = Pick<AirMapProps, 'stations' | 'selectedId' | 'canShowCurrent'>;
+
 export function AirMap({ stations, selectedId, canShowCurrent, onSelect }: AirMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const stateRef = useRef<MarkerState>({ stations, selectedId, canShowCurrent });
   const onSelectRef = useRef(onSelect);
   useEffect(() => {
     onSelectRef.current = onSelect;
   }, [onSelect]);
+
+  const drawMarkers = useCallback(() => {
+    const map = mapRef.current;
+    const layer = markersRef.current;
+    if (!map || !layer) return;
+    const { stations, selectedId, canShowCurrent } = stateRef.current;
+    const compact = map.getZoom() < COMPACT_BELOW_ZOOM;
+    containerRef.current?.classList.toggle('is-compact', compact);
+
+    const placed = stations.flatMap((station) => {
+      if (typeof station.latitude !== 'number' || typeof station.longitude !== 'number') return [];
+      const live = canShowCurrent && !station.isStale;
+      const point = map.latLngToContainerPoint([station.latitude, station.longitude]);
+      // Selected first, then current data, then the worst air: the riskiest numbers stay readable.
+      const priority = (station.siteId === selectedId ? 10_000 : 0) + (live ? 1_000 : 0) + station.aqi;
+      return [{ station, live, point, priority }];
+    });
+    const visible = selectVisiblePins(
+      placed.map(({ station, point, priority }) => ({ id: station.siteId, x: point.x, y: point.y, priority })),
+      compact ? COMPACT_PIN_BOX : PIN_BOX
+    );
+
+    layer.clearLayers();
+    for (const { station, live, priority } of placed) {
+      const swatch = AQI_SWATCHES[live ? station.categoryId : 'unknown'];
+      const asPin = visible.has(station.siteId);
+      const classes = [asPin ? 'aqi-pin' : 'aqi-dot', live ? '' : 'is-stale', station.siteId === selectedId ? 'is-selected' : '']
+        .filter(Boolean)
+        .join(' ');
+      const icon = L.divIcon({
+        className: 'aqi-pin-icon',
+        iconSize: [0, 0],
+        html: `<span class="${classes}" style="--fill:${swatch.fill};--ink:${swatch.ink}">${asPin ? station.aqi : ''}</span>`
+      });
+      const statusText = live ? station.category.label : '資料過期';
+      L.marker([station.latitude!, station.longitude!], {
+        icon,
+        keyboard: true,
+        title: `${station.county} ${station.stationName}：AQI ${station.aqi}（${statusText}）`,
+        alt: `${station.stationName} AQI ${station.aqi}`,
+        riseOnHover: true,
+        // Number pins always stack above dots, whatever their priority.
+        zIndexOffset: (asPin ? 20_000 : 0) + priority
+      })
+        .on('click', () => onSelectRef.current(station))
+        .addTo(layer);
+    }
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -40,54 +96,27 @@ export function AirMap({ stations, selectedId, canShowCurrent, onSelect }: AirMa
     map.fitBounds(TAIWAN_BOUNDS, { padding: [8, 8] });
     map.attributionControl.setPrefix(false);
     L.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, maxZoom: 19 }).addTo(map);
-    const syncDensity = () => containerRef.current?.classList.toggle('is-compact', map.getZoom() < COMPACT_BELOW_ZOOM);
-    map.on('zoomend', syncDensity);
-    syncDensity();
     markersRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
+    // Pixel distances only change with zoom (and container size), not with panning.
+    map.on('zoomend', drawMarkers);
 
-    const resize = new ResizeObserver(() => map.invalidateSize());
+    const resize = new ResizeObserver(() => {
+      map.invalidateSize();
+      drawMarkers();
+    });
     resize.observe(containerRef.current);
     return () => {
       resize.disconnect();
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [drawMarkers]);
 
   useEffect(() => {
-    const layer = markersRef.current;
-    if (!layer) return;
-    layer.clearLayers();
-    // Draw low values first so higher-AQI pins sit on top where they overlap.
-    const ordered = [...stations].sort((a, b) => {
-      if (a.siteId === selectedId) return 1;
-      if (b.siteId === selectedId) return -1;
-      return a.aqi - b.aqi;
-    });
-    for (const station of ordered) {
-      if (typeof station.latitude !== 'number' || typeof station.longitude !== 'number') continue;
-      const live = canShowCurrent && !station.isStale;
-      const swatch = AQI_SWATCHES[live ? station.categoryId : 'unknown'];
-      const classes = ['aqi-pin', live ? '' : 'is-stale', station.siteId === selectedId ? 'is-selected' : ''].filter(Boolean).join(' ');
-      const icon = L.divIcon({
-        className: 'aqi-pin-icon',
-        iconSize: [0, 0],
-        html: `<span class="${classes}" style="--fill:${swatch.fill};--ink:${swatch.ink}">${station.aqi}</span>`
-      });
-      const statusText = live ? station.category.label : '資料過期';
-      L.marker([station.latitude, station.longitude], {
-        icon,
-        keyboard: true,
-        title: `${station.county} ${station.stationName}：AQI ${station.aqi}（${statusText}）`,
-        alt: `${station.stationName} AQI ${station.aqi}`,
-        riseOnHover: true,
-        zIndexOffset: station.siteId === selectedId ? 1000 : 0
-      })
-        .on('click', () => onSelectRef.current(station))
-        .addTo(layer);
-    }
-  }, [stations, selectedId, canShowCurrent]);
+    stateRef.current = { stations, selectedId, canShowCurrent };
+    drawMarkers();
+  }, [stations, selectedId, canShowCurrent, drawMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;

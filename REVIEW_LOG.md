@@ -4,8 +4,8 @@
 
 Scope reviewed:
 
-- Empty target folder at `/Users/jiaquan/Development/taiwan-aqi-dashboard`.
-- Local reservoir reference project at `/Users/jiaquan/Development/acc/taiwan-reservoir-static`.
+- Empty target project folder for this dashboard.
+- The sibling Taiwan reservoir dashboard, used as a design-family reference.
 - Official MOENV dataset page for `AQX_P_432`.
 - Official API usage page.
 - Live `curl` check without `api_key`.

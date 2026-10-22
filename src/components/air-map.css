@@ -21,6 +21,26 @@
   font-size: 10px;
 }
 
+.aqi-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--fill);
+  box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.95), 0 1px 3px rgb(0 0 0 / 0.3);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.dark .aqi-dot {
+  box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.55), 0 1px 3px rgb(0 0 0 / 0.5);
+}
+
+.aqi-dot.is-stale {
+  background: rgb(var(--surface));
+  box-shadow: inset 0 0 0 1.5px rgb(var(--faint));
+}
+
 .aqi-pin-icon {
   background: transparent;
   border: 0;

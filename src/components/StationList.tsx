@@ -126,6 +126,10 @@ export function MapLegend({ dimmed }: { dimmed: boolean }) {
         <span className="h-2.5 w-2.5 rounded-sm outline-dashed outline-1 outline-faint" aria-hidden="true" />
         <span>過期</span>
       </li>
+      <li className="flex items-center gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-faint" aria-hidden="true" />
+        <span>小圓點：放大可看數字</span>
+      </li>
     </ul>
   );
 }
