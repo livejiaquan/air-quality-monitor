@@ -89,3 +89,13 @@ Reason: Official station types represent different environments; closest is not 
 Decision: Keep the manual county-to-station selector, but show an inline limitation before a user chooses a station: the current product has no station-type, address, or distance metadata and therefore does not identify the nearest or most representative station. Link to the MOENV station-type explanation.
 
 Reason: AQX_P_432 contains AQI and coordinates but no supported basis for a personal exposure or nearest-station claim. MOENV documents that general, traffic, industrial, background, and other stations serve distinct monitoring purposes. This small P1 prevents false precision now while station metadata remains an external/data integration task.
+
+## 2026-10-22 - Search-first Redesign and Single-branch Deployment
+
+Decision: Lead with a remembered "my station" card (search by station or county, big AQI tile, six-band scale, split advice), followed by a Leaflet map with numeric AQI pins plus a synchronized list, then the national overview. Support light and dark themes. Replace Recharts with CSS bars. Display colours follow the official MOENV hues (`src/lib/palette.ts`), and the number and category label always accompany the colour.
+
+Reason: Research on AirNow, IQAir, aqicn, PurpleAir and the MOENV monitor (`docs/design-research.md`) shows the best products answer "my place" first and never rely on colour alone. The stylized SVG map showed only 12 stations and could not be used to find one. The trust-first rules stay unchanged: no geolocation, no "nearest station" claim, and no current advice from stale or sample data.
+
+Decision: `main` is the only source. One Pages workflow fetches the MOENV snapshot server-side with the Actions secret, validates it, builds, and deploys it without committing the cache back.
+
+Reason: Production was previously built from `codex/unified-visual-refresh` through a bridge workflow, and the hourly cache commits buried the history in bot commits. Baking the snapshot into the artifact keeps the key out of the bundle, keeps the history clean, and stays fail-closed: when any step fails, the previous deployment stays online.

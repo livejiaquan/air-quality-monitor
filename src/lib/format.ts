@@ -25,3 +25,13 @@ export function getDominantPollutant(stations: AqiStationRecord[]): string {
 
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'))[0]?.[0] ?? '無明顯污染物';
 }
+
+/** Short Asia/Taipei label for a publish time: "15:00", or "10/21 15:00" when not today. */
+export function formatPublishLabel(iso: string | null | undefined, now = new Date()): string {
+  if (!iso) return '時間未知';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '時間未知';
+  const day = (value: Date) => new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', month: '2-digit', day: '2-digit' }).format(value);
+  const time = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
+  return day(date) === day(now) ? time : `${day(date)} ${time}`;
+}

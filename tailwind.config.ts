@@ -1,26 +1,30 @@
 import type { Config } from 'tailwindcss';
 
+const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'Noto Sans TC', 'ui-sans-serif', 'system-ui', 'sans-serif']
+        sans: ['"Noto Sans TC"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        num: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
       },
       colors: {
-        aqi: {
-          good: '#16803c',
-          moderate: '#b77900',
-          sensitive: '#c45a16',
-          unhealthy: '#c52222',
-          veryUnhealthy: '#7e3bb2',
-          hazardous: '#7f1d1d',
-          unknown: '#64748b'
-        }
+        canvas: token('canvas'),
+        surface: token('surface'),
+        sunken: token('sunken'),
+        line: token('line'),
+        ink: token('ink'),
+        muted: token('muted'),
+        faint: token('faint'),
+        accent: token('accent'),
+        warn: token('warn'),
+        warnbg: token('warnbg')
       },
       boxShadow: {
-        dashboard: '0 18px 45px -30px rgb(16 33 28 / 0.32)',
-        soft: '0 12px 30px -24px rgb(16 33 28 / 0.25)'
+        card: '0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12)'
       }
     }
   },

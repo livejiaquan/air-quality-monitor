@@ -1,101 +1,80 @@
-# 台灣 AQI 在地速查
+# 台灣空氣品質 · Taiwan AQI
 
-一個以可信度優先的台灣空氣品質公共產品：使用者不需登入或提供定位，選擇縣市與測站後，可查看環境部 AQI、資料發布時間，以及分開呈現的一般民眾／敏感族群活動提醒。
+**線上版：<https://livejiaquan.github.io/air-quality-monitor/>**
 
-## 目前狀態
+搜尋你生活或活動區域的測站，就能看到環境部最新 AQI、各污染物濃度，以及分開給一般民眾和敏感族群的活動建議；全台測站地圖每小時更新。資料過期時會清楚標示，並暫停「現在」的結論，不會用舊資料假裝即時。
 
-此 repository 已具備可重現的前端、資料驗證、定時更新、CI 與 GitHub Pages 部署流程，但**尚未達到公開上線門檻**：
+<p>
+  <img src="docs/screenshots/after-desktop.jpg" alt="桌面版：我的測站卡片，顯示板橋 AQI 51 普通、色階條與活動建議" width="62%" />
+  <img src="docs/screenshots/after-mobile.jpg" alt="手機版：我的測站卡片" width="30%" />
+</p>
 
-- checked-in cache 仍是刻意標記的 12 站範例資料，不能當成現在狀況。
-- production deployment 會主動拒絕 sample、fallback、過期或覆蓋不足的 cache。
-- 尚未配置本產品自己的 `MOENV_API_KEY`、remote repository、GitHub Pages environment、正式網域與 72 小時更新觀察。
-- 三日空品區預報、測站站型／距離與真實使用者測試仍在 roadmap，不能宣稱已完成。
+## 功能
 
-產品在沒有可信當期資料時會停止現在排行與活動結論，而不是用範例或舊資料填滿畫面。
+- **我的測站**：輸入站名或縣市即可搜尋（「台／臺」都能用），選過的測站會記住，下次打開直接顯示。
+- **大數字＋類別＋色階條**：AQI 數字、官方類別名稱和六段色階條同時呈現，顏色不是唯一線索，色盲使用者也能判讀。
+- **全台地圖與列表**：Leaflet 地圖上每個測站都是一顆數字標記；手機可切換地圖／列表，桌面兩者並排。
+- **資料時效**：頁首顯示最新發布時間；超過 3 小時的測站改成灰色虛線樣式，並排除於排行與建議之外。
+- **深淺色模式**：預設跟隨系統，也可以手動切換。
+- **全台概況**：類別分布與各縣市最高值，只計算有效且新鮮的測站。
 
-## 為何不是另一個全台排行 Dashboard
+設計研究（環境部監測網、IQAir、aqicn、PurpleAir、AirNow 等產品比較，以及採用的取捨）見 [docs/design-research.md](./docs/design-research.md)。
 
-官方與既有 App 已提供地圖、定位、預報、收藏及通知。本產品目前聚焦一個更窄的工作：在瀏覽器中用最少步驟回答「我選的所在地測站現在如何、資料多久前、一般人與敏感族群該注意什麼」，並把資料是否可用放在結論之前。
+## 架構
 
-Mission、競品證據、成功指標與分階段 launch gates 見 [PROJECT_PLAN.md](./PROJECT_PLAN.md)。
+```
+MOENV AQX_P_432 ──(GitHub Actions，server-side，帶 secret)──▶ scripts/fetch-aqi.mjs
+                                                              │ 欄位白名單＋production contract 驗證
+                                                              ▼
+                                               public/data/aqi-latest.json（只存在 build 產物中）
+                                                              │
+                                    Vite build ──▶ dist/ ──▶ GitHub Pages（純靜態）
+```
 
-## 資料來源與可信度契約
+- **前端**：Vite、React 19、TypeScript、Tailwind CSS、Leaflet（OpenStreetMap 圖磚）、lucide 圖示。
+- **API key 不會進前端**：瀏覽器只讀取同站的靜態 JSON；key 只存在 Actions secret，部署前會掃描 `dist/`，確認沒有任何憑證字串。
+- **Fail-closed**：抓取、驗證、lint、測試或 build 任一步失敗都不部署，線上保留上一版；前端也會逐站重新計算時效。
+- **不產生 bot commit**：每次部署都是在 workflow 內即時抓資料，快取不再 commit 回 repo。
 
-主要資料為環境部環境資料開放平臺 [AQX_P_432 空氣品質指標](https://data.moenv.gov.tw/dataset/detail/AQX_P_432)，官方標示每小時更新。瀏覽器不接觸 API key，只讀取 `public/data/aqi-latest.json` 靜態快取。
+### 資料可信度契約
 
-正式快取在寫入前必須符合：
+`scripts/aqi-cache-contract.mjs` 在寫入快取前會檢查以下條件，並有完整測試：
 
-- `source.kind` 必須是 `official-cache`，禁止 sample／fallback。
-- 至少 80 筆有效測站、涵蓋 22 個合法台灣縣市，且有效比例至少 95%（依本輪官方 84 站 live snapshot 設定初始 fail-closed 門檻）。
-- `siteid` 唯一，核心欄位齊全，AQI 為 0–500 的整數。
-- 每站發布時間可依 Asia/Taipei 正確解析、不得超過 15 分鐘未來容忍值，亦不得超過 3 小時。
-- 空字串、`-` 等可選污染物缺值可保留，但不會轉成 0。
-- 寫入內容使用欄位白名單，不含 API URL、key、token 或 cookie。
-- 驗證與同目錄暫存寫入成功後才原子替換；全體最新時間或任一既有測站時間倒退都會拒絕，錯誤會保留上一版 cache。
+- 至少 80 個有效測站，涵蓋 22 個縣市，有效比例至少 95%。
+- `siteid` 不重複；AQI 為 0–500 的整數。
+- 發布時間依 Asia/Taipei 解析，不得超過 3 小時，也不得超前現在 15 分鐘以上。
+- 缺值保留為空，不轉成 0；全體或單站的發布時間倒退都會拒絕。
 
-前端另外逐站計算 freshness。混合新舊資料時，舊站不會進入目前最高值、縣市排行、分布與活動建議。
-
-即時資料只適合生活參考；正式研究或統計引用應使用環境部品保後資料。健康提示依環境部 2025-01-01 起的[現行 AQI 健康影響及活動建議](https://airtw.moenv.gov.tw/CHT/Information/Standard/AirQualityIndicatorNew.aspx#Health)精簡整理，不是醫療建議；個人用藥依既有醫囑。
+健康提示依環境部 2025-01-01 起的[現行 AQI 健康影響與活動建議](https://airtw.moenv.gov.tw/CHT/Information/Standard/AirQualityIndicatorNew.aspx#Health)精簡整理，不是醫療建議。即時資料未經品保，正式引用請使用環境部品保後的資料。
 
 ## 本機開發
 
-需要 Node.js 22 與 npm lockfile：
+需要 Node.js 22：
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Vite 會印出本機網址。預設看到 sample/stale gate 是正確行為。
+repo 內附一份已通過驗證的快照（`public/data/aqi-latest.json`），超過 3 小時後畫面會進入「資料過期」狀態，這是預期行為。其他可重現的展示狀態：`/?demo=loading`、`/?demo=empty`、`/?demo=error`。
 
-可重現的展示狀態：
-
-- `/`：checked-in cache（目前為 sample/stale）
-- `/?demo=error`：載入錯誤
-- `/?demo=empty`：空資料
-- `/?demo=loading`：載入中
-
-## 抓取官方資料
-
-先向環境部申請本產品自己的 API key。不要使用文件範例 key、他人的 key，或把 key 寫進檔案與命令紀錄。
+用自己的 key 抓最新資料（[向環境部申請](https://data.moenv.gov.tw/)）：
 
 ```bash
-export MOENV_API_KEY=your-own-api-key
-npm run fetch:aqi
-npm run validate:aqi
+MOENV_API_KEY=your-key npm run fetch:aqi
 ```
 
-`fetch:aqi` 只有在 production contract 通過後才會替換快取。API key 缺失、上游非 JSON、HTTP 錯誤或資料不可信時會以非零狀態結束且不破壞 last-known-good。
-
-## 驗證
+驗證：
 
 ```bash
-npm run lint
-npm run typecheck
-npm run test
-npm run build
+npm run lint && npm run typecheck && npm run test && npm run build
 ```
-
-`npm run validate:aqi` 是 production data gate；在目前 sample cache 上失敗是預期結果。CI 可驗證程式與 synthetic contract fixtures，部署工作流則必須額外通過真實 production cache gate。
 
 ## 部署
 
-`.github/workflows/deploy-pages.yml` 使用 GitHub Pages custom workflow。它接收預設分支 push／手動操作，也在 refresh workflow 成功後以 `workflow_run` 重新 checkout 預設分支，避免 `GITHUB_TOKEN` 自動提交不會觸發下一個 push workflow 的限制。每次部署依序：
-
-1. 安裝 lockfile dependencies。
-2. 拒絕 sample、fallback、過期與覆蓋不足的 cache。
-3. 執行 lint、typecheck、tests、production build。
-4. 只上傳 `dist` artifact，部署至受保護的 `github-pages` environment。
-
-啟用前仍需人工完成：
-
-1. 建立 remote repository，將受 review 的分支合併到預設分支。
-2. 在 Actions secret 設定本產品自己的 `MOENV_API_KEY`。
-3. 在 Pages 將 source 設為 GitHub Actions，保護 `github-pages` environment。
-4. 先成功執行 refresh workflow，確認 cache 為新鮮官方資料，再觸發部署。
-5. 連續觀察至少 72 小時的每小時更新、失敗保留、source age 與資料筆數。
-6. 正式網域確定後再加入並驗證 `CNAME`、DNS、HTTPS、canonical URL、`og:url`、sitemap 與 Search Console；目前不猜測網域。
+- `.github/workflows/deploy.yml`：在 push main、手動觸發或排程（每小時兩次）時執行，流程是抓資料、驗證、測試、build，最後部署到 GitHub Pages。需要在 repository secret 設定 `MOENV_API_KEY`（舊的 `API_KEY` 名稱也能用）。
+- `.github/workflows/ci.yml`：PR 時跑 lint、typecheck、test 和 build，不使用任何 secret。
 
 ## 授權與資料顯名
 
-程式碼採 [MIT License](./LICENSE)。環境部資料依[政府資料開放授權條款第 1 版](https://data.gov.tw/license)再利用；產品頁面保留資料集名稱、來源連結與非官方服務聲明。
+程式碼採 [MIT License](./LICENSE)。資料來源為環境部「[空氣品質指標（AQX_P_432）](https://data.moenv.gov.tw/dataset/detail/AQX_P_432)」，依[政府資料開放授權條款第 1 版](https://data.gov.tw/license)再利用；底圖 © OpenStreetMap 貢獻者。本站不是環境部官方網站。

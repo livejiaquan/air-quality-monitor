@@ -1,18 +1,73 @@
-import { Wind } from 'lucide-react';
+import { Moon, RotateCw, Sun, Wind } from 'lucide-react';
+import type { AqiDataset } from '../lib/aqi';
+import { formatHours, formatPublishLabel } from '../lib/format';
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  dataset?: AqiDataset;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+};
+
+export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefreshing = false }: SiteHeaderProps) {
   return (
-    <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-      <a href="#main-content" className="group inline-flex items-center gap-3 rounded-xl" aria-label="台灣生活資料誌：空氣品質首頁">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0f766e] text-white shadow-[0_8px_20px_-12px_rgba(15,118,110,.8)]">
-          <Wind aria-hidden="true" className="h-5 w-5" />
-        </span>
-        <span>
-          <span className="block text-[11px] font-bold tracking-[0.14em] text-[#52706a]">台灣生活資料誌</span>
-          <span className="block text-sm font-black tracking-tight text-[#10211c]">空氣品質</span>
-        </span>
-      </a>
-      <span className="hidden rounded-full border border-[#c9d7d1] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[#36544c] sm:block">AQI · 測站速查</span>
+    <header className="sticky top-0 z-[1000] border-b border-line/80 bg-canvas/85 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
+        <a href="./" className="flex min-w-0 items-center gap-2.5" aria-label="台灣空氣品質 首頁">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-white dark:text-canvas">
+            <Wind aria-hidden="true" className="h-[18px] w-[18px]" />
+          </span>
+          <span className="truncate text-[15px] font-bold tracking-tight">台灣空氣品質</span>
+        </a>
+        <div className="ml-auto flex items-center gap-1.5">
+          {dataset && <FreshnessPill dataset={dataset} />}
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              aria-label={isRefreshing ? '正在重新讀取資料' : '重新讀取資料'}
+              title="重新讀取資料"
+              className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-sunken hover:text-ink disabled:cursor-wait"
+            >
+              <RotateCw aria-hidden="true" className={`h-[18px] w-[18px] ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            aria-label={theme === 'dark' ? '切換為淺色模式' : '切換為深色模式'}
+            title={theme === 'dark' ? '淺色模式' : '深色模式'}
+            className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-sunken hover:text-ink"
+          >
+            {theme === 'dark' ? <Sun aria-hidden="true" className="h-[18px] w-[18px]" /> : <Moon aria-hidden="true" className="h-[18px] w-[18px]" />}
+          </button>
+        </div>
+      </div>
     </header>
+  );
+}
+
+function FreshnessPill({ dataset }: { dataset: AqiDataset }) {
+  const { summary } = dataset;
+  const official = dataset.source.kind === 'official-cache';
+  const fresh = official && !summary.isStale;
+  const label = !official
+    ? '展示資料'
+    : fresh
+      ? `${formatPublishLabel(summary.newestPublishTimeISO)} 發布`
+      : `已過期 ${formatHours(summary.hoursSinceUpdate).replace("前", "")}`;
+
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
+        fresh ? 'bg-sunken text-muted' : 'bg-warnbg text-warn'
+      }`}
+      title={fresh ? `最新測站資料 ${formatHours(summary.hoursSinceUpdate)}` : '沒有 3 小時內的有效測站資料'}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${fresh ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
+      <span className="tabular">{label}</span>
+    </span>
   );
 }
