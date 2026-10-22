@@ -1,13 +1,10 @@
-# System Files
+node_modules
+dist
+dist-ssr
+.env
+.env.local
+.env.*.local
 .DS_Store
-Thumbs.db
-
-# Logs
+coverage
+.playwright-cli
 *.log
-
-# Dependencies (if any in future)
-node_modules/
-
-# Configuration
-# js/apikey.js (no longer needed - API key is injected into config.js during build)
-

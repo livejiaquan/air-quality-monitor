@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --canvas: 246 247 249;
+  --surface: 255 255 255;
+  --sunken: 241 243 246;
+  --line: 226 230 236;
+  --ink: 17 24 39;
+  --muted: 75 85 99;
+  --faint: 100 108 121;
+  --accent: 13 110 103;
+  --warn: 146 84 0;
+  --warnbg: 255 247 230;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --canvas: 11 15 20;
+  --surface: 20 25 32;
+  --sunken: 28 34 43;
+  --line: 44 52 64;
+  --ink: 236 239 243;
+  --muted: 170 178 189;
+  --faint: 128 137 150;
+  --accent: 94 214 197;
+  --warn: 252 196 98;
+  --warnbg: 52 38 14;
+}
+
+html,
+body {
+  margin: 0;
+  min-width: 320px;
+  background: rgb(var(--canvas));
+  color: rgb(var(--ink));
+  font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid rgb(var(--accent) / 0.55);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

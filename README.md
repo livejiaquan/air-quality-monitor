@@ -1,72 +1,80 @@
-# 台灣空氣品質即時監測 (Taiwan AQI Monitor)
+# 台灣空氣品質 · Taiwan AQI
 
-這是一個使用 **Native JavaScript**、**Tailwind CSS** 和 **Leaflet.js** 開發的靜態網頁應用程式，用於即時監測台灣各地的空氣品質 (AQI)。
+**線上版：<https://livejiaquan.github.io/air-quality-monitor/>**
 
-## 功能特色
+搜尋你生活或活動區域的測站，就能看到環境部最新 AQI、各污染物濃度，以及分開給一般民眾和敏感族群的活動建議；全台測站地圖每小時更新。資料過期時會清楚標示，並暫停「現在」的結論，不會用舊資料假裝即時。
 
--   **即時地圖視覺化**：整合 Leaflet.js 顯示全台測站位置。
--   **顏色分級警示**：根據 AQI 數值顯示不同顏色的標記 (綠/黃/橘/紅/紫/褐)。
--   **詳細資訊面板**：點擊測站可查看 PM2.5、PM10、主要污染物及健康建議。
--   **地區篩選**：可快速切換至特定縣市。
--   **響應式設計**：支援桌面與行動裝置瀏覽。
+<p>
+  <img src="docs/screenshots/desktop-1440-light-station.jpg" alt="桌面版：我的測站卡片，顯示臺中西屯 AQI 122 對敏感族群不健康、色階條、活動建議與污染物" width="62%" />
+  <img src="docs/screenshots/mobile-390-dark-home.jpg" alt="手機深色模式：主要城市快速選站與全台現況" width="30%" />
+</p>
 
-## 技術架構
+## 功能
 
--   **Frontend**: HTML5, JavaScript (ES6 Modules)
--   **Styling**: Tailwind CSS (CDN), Custom CSS (Glassmorphism)
--   **Map**: Leaflet.js, OpenStreetMap
--   **Data Source**: [環境部開放資料平臺 (MOENV)](https://data.moenv.gov.tw/)
+- **我的測站**：輸入站名或縣市即可搜尋（「台／臺」都能用），或一鍵選六都主要測站；選過的測站會記住，下次打開直接顯示。
+- **大數字＋類別＋色階條**：AQI 數字、官方類別名稱和六段色階條同時呈現，顏色不是唯一線索，色盲使用者也能判讀。
+- **全台地圖與列表**：Leaflet 地圖上每個測站都是一顆數字標記；手機可切換地圖／列表，桌面兩者並排。
+- **資料時效**：頁首顯示最新發布時間；超過 3 小時的測站改成灰色虛線樣式，並排除於排行與建議之外。
+- **深淺色模式**：預設跟隨系統，也可以手動切換。
+- **全台概況**：類別分布與各縣市最高值，只計算有效且新鮮的測站。
 
-## 如何在本地端執行 (How to Run Locally)
+使用者研究（persona、任務、非功能需求、裝置評估）見 [docs/ux-research.md](./docs/ux-research.md)；設計研究（同類產品與開源實作比較、主流前端參考、設計語言）見 [docs/design-research.md](./docs/design-research.md)。
 
-由於瀏覽器安全性限制 (CORS)，本專案無法直接透過雙擊 `index.html` 開啟，必須透過本地網頁伺服器執行。
+## 架構
 
-### 方法 1: 使用 Python (推薦)
+```
+MOENV AQX_P_432 ──(GitHub Actions，server-side，帶 secret)──▶ scripts/fetch-aqi.mjs
+                                                              │ 欄位白名單＋production contract 驗證
+                                                              ▼
+                                               public/data/aqi-latest.json（只存在 build 產物中）
+                                                              │
+                                    Vite build ──▶ dist/ ──▶ GitHub Pages（純靜態）
+```
 
-如果你有安裝 Python 3：
+- **前端**：Vite、React 19、TypeScript、Tailwind CSS、Leaflet（OpenStreetMap 圖磚）、lucide 圖示。
+- **API key 不會進前端**：瀏覽器只讀取同站的靜態 JSON；key 只存在 Actions secret，部署前會掃描 `dist/`，確認沒有任何憑證字串。
+- **Fail-closed**：抓取、驗證、lint、測試或 build 任一步失敗都不部署，線上保留上一版；前端也會逐站重新計算時效。
+- **不產生 bot commit**：每次部署都是在 workflow 內即時抓資料，快取不再 commit 回 repo。
 
-1.  開啟終端機 (Terminal)。
-2.  進入專案資料夾：
-    ```bash
-    cd /path/to/project
-    ```
-3.  啟動伺服器：
-    ```bash
-    python3 -m http.server 8080
-    ```
-4.  在瀏覽器開啟：`http://localhost:8080`
+### 資料可信度契約
 
-### 方法 2: 使用 Node.js
+`scripts/aqi-cache-contract.mjs` 在寫入快取前會檢查以下條件，並有完整測試：
 
-如果你有安裝 Node.js：
+- 至少 80 個有效測站，涵蓋 22 個縣市，有效比例至少 95%。
+- `siteid` 不重複；AQI 為 0–500 的整數。
+- 發布時間依 Asia/Taipei 解析，不得超過 3 小時，也不得超前現在 15 分鐘以上。
+- 缺值保留為空，不轉成 0；全體或單站的發布時間倒退都會拒絕。
 
-1.  安裝 `serve` 套件：
-    ```bash
-    npm install -g serve
-    ```
-2.  啟動伺服器：
-    ```bash
-    serve .
-    ```
+健康提示依環境部 2025-01-01 起的[現行 AQI 健康影響與活動建議](https://airtw.moenv.gov.tw/CHT/Information/Standard/AirQualityIndicatorNew.aspx#Health)精簡整理，不是醫療建議。即時資料未經品保，正式引用請使用環境部品保後的資料。
 
-## 部署至 GitHub Pages
+## 本機開發
 
-本專案為純靜態網頁，非常適合部署至 GitHub Pages。
+需要 Node.js 22：
 
-1.  將專案 Push 到 GitHub Repository。
-2.  進入 Repository 的 **Settings** > **Pages**。
-3.  在 **Build and deployment** 下的 **Source** 選擇 `Deploy from a branch`。
-4.  **Branch** 選擇 `main` (或 `master`)，資料夾選擇 `/ (root)`。
-5.  點擊 **Save**。
-6.  等待幾分鐘後，GitHub 會提供網址 (例如 `https://username.github.io/repo-name/`)。
+```bash
+npm ci
+npm run dev
+```
 
-## 關於 API Key 安全性
+repo 內附一份已通過驗證的快照（`public/data/aqi-latest.json`），超過 3 小時後畫面會進入「資料過期」狀態，這是預期行為。其他可重現的展示狀態：`/?demo=loading`、`/?demo=empty`、`/?demo=error`。
 
-本專案使用環境部開放資料 API。由於是純前端靜態網頁，API Key 必須包含在前端程式碼中才能發送請求。這在開放資料應用中是常見且通常被允許的做法，但請勿將此架構用於需要高度安全性的私有 API 金鑰。
+用自己的 key 抓最新資料（[向環境部申請](https://data.moenv.gov.tw/)）：
 
-API 設定位於 `js/config.js`。
+```bash
+MOENV_API_KEY=your-key npm run fetch:aqi
+```
 
-## 自動部署 (CI/CD)
+驗證：
 
-本專案使用 GitHub Actions 自動部署。每次 Push 到 `main` 分支時，會自動注入 API Key 並部署到 GitHub Pages。
+```bash
+npm run lint && npm run typecheck && npm run test && npm run build
+```
 
+## 部署
+
+- `.github/workflows/deploy.yml`：在 push main、手動觸發或排程（每小時兩次）時執行，流程是抓資料、驗證、測試、build，最後部署到 GitHub Pages。需要在 repository secret 設定 `MOENV_API_KEY`（舊的 `API_KEY` 名稱也能用）。
+- `.github/workflows/ci.yml`：PR 時跑 lint、typecheck、test 和 build，不使用任何 secret。
+
+## 授權與資料顯名
+
+程式碼採 [MIT License](./LICENSE)。資料來源為環境部「[空氣品質指標（AQX_P_432）](https://data.moenv.gov.tw/dataset/detail/AQX_P_432)」，依[政府資料開放授權條款第 1 版](https://data.gov.tw/license)再利用；底圖 © OpenStreetMap 貢獻者。本站不是環境部官方網站。
