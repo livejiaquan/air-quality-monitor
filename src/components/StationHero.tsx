@@ -67,7 +67,7 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
             <div className="min-w-0">
               <p className="text-sm text-muted">
                 {station.county}
-                {isDefault && <span className="ml-2 rounded-full bg-sunken px-2 py-1 text-xs font-semibold text-muted">預設測站</span>}
+                {isDefault && <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-sunken px-2 py-1 text-xs font-semibold text-muted">預設測站</span>}
               </p>
               <h1 id="hero-heading" className="mt-1 truncate text-xl font-bold tracking-tight sm:text-2xl">
                 {station.stationName}
@@ -110,7 +110,7 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
             </div>
           )}
 
-          <dl className="grid grid-cols-3 gap-2" aria-label={canAdvise ? '目前污染物濃度' : '快取污染物濃度'}>
+          <dl className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3" aria-label={canAdvise ? '目前污染物濃度' : '快取污染物濃度'}>
             {POLLUTANTS.map(([key, label, unit, digits]) => {
               const isMain = canAdvise && mainKey === key;
               return (

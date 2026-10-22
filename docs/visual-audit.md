@@ -33,5 +33,24 @@
 截圖都在 `docs/screenshots/`：
 
 - `focal-desktop-light.png`、`focal-desktop-dark.png`：1440×900，DPR 1。
-- `focal-mobile-light.png`、`focal-mobile-dark.png`：390×844，DPR 2，所以實際像素是 780×1688。
+- `focal-mobile-light.png`、`focal-mobile-dark.png`：390×844，DPR 2，所以實際像素是 780×1688。改用內建瀏覽器的裝置模擬截圖，原尺寸、沒有縮圖（原因見下節）。
 - `focal-desktop-light-squint.png`、`focal-mobile-light-squint.png`：首屏模糊 8 CSS px 的版本（手機圖因為 DPR 2，以 16 實際像素模糊）。模糊後只剩彩色 AQI 方塊是主區塊。
+
+## 手機寬度修正（審查回饋）
+
+- **問題**：第一版的手機截圖看起來整頁往右溢出。
+- **原因**：headless Chrome 的視窗最小寬度是 500px。指定 `--window-size=390,844` 時，頁面實際是以 500px 排版（實測 `innerWidth=500`），再把截圖裁成 390px，所以截圖是錯的。
+- **實際頁面**：以裝置模擬實測，四種寬度都沒有水平捲動：
+
+| 寬度 | `document.documentElement.scrollWidth` |
+|---|---|
+| 320 | 320 |
+| 375 | 375 |
+| 390 | 390 |
+| 430 | 430 |
+
+- **順手修了 320px 的擁擠問題**：
+  - 頁首的時效標示在 380px 以下只顯示時間，品牌名稱就不會被截斷。
+  - 「預設測站」標籤改成不換行。
+  - 污染物卡片在 380px 以下改成兩欄。
+- 手機截圖已改用內建瀏覽器重拍。

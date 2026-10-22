@@ -56,7 +56,7 @@ function FreshnessPill({ dataset }: { dataset: AqiDataset }) {
   const label = !official
     ? '展示資料'
     : fresh
-      ? `${formatPublishLabel(summary.newestPublishTimeISO)} 發布`
+      ? formatPublishLabel(summary.newestPublishTimeISO)
       : `已過期 ${formatHours(summary.hoursSinceUpdate).replace("前", "")}`;
 
   return (
@@ -67,7 +67,10 @@ function FreshnessPill({ dataset }: { dataset: AqiDataset }) {
       title={fresh ? `最新測站資料 ${formatHours(summary.hoursSinceUpdate)}` : '沒有 3 小時內的有效測站資料'}
     >
       <span className={`h-2 w-2 rounded-full ${fresh ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
-      <span className="tabular">{label}</span>
+      <span className="tabular">
+        {label}
+        {fresh && <span className="hidden min-[380px]:inline"> 發布</span>}
+      </span>
     </span>
   );
 }
