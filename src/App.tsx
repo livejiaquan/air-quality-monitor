@@ -270,12 +270,7 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
             了解測站類型
           </a>
         </p>
-        <p>
-          地圖 © OpenStreetMap 貢獻者 ·{' '}
-          <a className="underline underline-offset-2" href="https://github.com/livejiaquan/air-quality-monitor" target="_blank" rel="noreferrer">
-            原始碼（MIT）
-          </a>
-        </p>
+        <p>地圖 © OpenStreetMap 貢獻者 · © 2026 Lim Jia Quan</p>
       </footer>
     </main>
   );
