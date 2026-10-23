@@ -14,6 +14,7 @@ type StaticAqiCache = {
 export type DemoMode = 'normal' | 'error' | 'empty' | 'loading';
 
 const CACHE_URL = `${import.meta.env.BASE_URL}data/aqi-latest.json`;
+const LAST_GOOD_KEY = 'aqi:last-cache';
 
 export async function loadAqiDataset(mode: DemoMode = getDemoMode()): Promise<AqiDataset> {
   if (mode === 'error') {
@@ -44,6 +45,36 @@ export async function loadAqiDataset(mode: DemoMode = getDemoMode()): Promise<Aq
   }
 
   const cache = (await response.json()) as StaticAqiCache;
+  const dataset = datasetFromCache(cache);
+  if (dataset.records.length > 0) rememberLastGoodCache(cache);
+  return dataset;
+}
+
+/**
+ * The last cache that loaded successfully in this browser, re-evaluated against
+ * the current clock. Used when the network or JSON fails so the page keeps
+ * showing the latest known readings instead of an error screen.
+ */
+export function loadLastGoodDataset(): AqiDataset | null {
+  try {
+    const raw = window.localStorage.getItem(LAST_GOOD_KEY);
+    if (!raw) return null;
+    const dataset = datasetFromCache(JSON.parse(raw) as StaticAqiCache);
+    return dataset.records.length > 0 ? dataset : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberLastGoodCache(cache: StaticAqiCache) {
+  try {
+    window.localStorage.setItem(LAST_GOOD_KEY, JSON.stringify(cache));
+  } catch {
+    // Storage full or blocked: the fallback is simply unavailable.
+  }
+}
+
+function datasetFromCache(cache: StaticAqiCache): AqiDataset {
   const dataset = normalizeAqiPayload(
     { records: Array.isArray(cache.records) ? cache.records : [] },
     {

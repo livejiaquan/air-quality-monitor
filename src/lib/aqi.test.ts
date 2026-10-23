@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getAqiCategory,
   getFreshness,
+  getFreshnessTier,
   normalizeAqiPayload,
   recomputeAqiDatasetFreshness,
   summarizeAqiDataset
@@ -143,15 +144,38 @@ describe('AQI normalization', () => {
     });
   });
 
-  it('marks hourly official data stale after three hours', () => {
-    const fresh = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-30T02:59:00.000Z');
-    const exactBoundary = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-30T04:00:00.000Z');
-    const stale = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-30T04:01:00.000Z');
+  it('keeps data usable for a day and marks it unusable only after 24 hours', () => {
+    const delayed = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-30T05:00:00.000Z');
+    const exactBoundary = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-31T01:00:00.000Z');
+    const stale = getFreshness('2026-05-30T01:00:00.000Z', '2026-05-31T01:01:00.000Z');
 
-    expect(fresh.isStale).toBe(false);
-    expect(exactBoundary.isStale).toBe(true);
+    expect(delayed.isStale).toBe(false);
+    expect(exactBoundary.isStale).toBe(false);
     expect(stale.isStale).toBe(true);
-    expect(stale.hoursSinceUpdate).toBeCloseTo(3.02, 2);
+    expect(stale.hoursSinceUpdate).toBeCloseTo(24.02, 2);
+  });
+
+  it('classifies freshness into live, aging, old and unusable tiers at the boundaries', () => {
+    expect(getFreshnessTier(0)).toBe('live');
+    expect(getFreshnessTier(1)).toBe('live'); // a normal one-hour MOENV publish lag
+    expect(getFreshnessTier(1.5)).toBe('live');
+    expect(getFreshnessTier(1.51)).toBe('aging');
+    expect(getFreshnessTier(6)).toBe('aging');
+    expect(getFreshnessTier(6.01)).toBe('old');
+    expect(getFreshnessTier(24)).toBe('old');
+    expect(getFreshnessTier(24.01)).toBe('unusable');
+    expect(getFreshnessTier(null)).toBe('unusable');
+    expect(getFreshnessTier(0.2, true)).toBe('unusable');
+  });
+
+  it('derives the tier from the publish time and the browser clock, not the build', () => {
+    const published = '2026-05-30T01:00:00.000Z';
+    const tierAt = (nowISO: string) => getFreshnessTier(getFreshness(published, nowISO).hoursSinceUpdate);
+
+    expect(tierAt('2026-05-30T01:30:00.000Z')).toBe('live');
+    expect(tierAt('2026-05-30T04:00:00.000Z')).toBe('aging');
+    expect(tierAt('2026-05-30T09:00:00.000Z')).toBe('old');
+    expect(tierAt('2026-05-31T07:00:00.000Z')).toBe('unusable');
   });
 
   it('excludes stale stations from current advice and rankings', () => {
@@ -178,14 +202,14 @@ describe('AQI normalization', () => {
   it('recomputes a loaded dataset when time crosses the hard freshness limit', () => {
     const dataset = normalizeAqiPayload(
       { records: [{ ...rawRecords[0], publishtime: '2026/05/30 09:00:00' }] },
-      { nowISO: '2026-05-30T11:59:00+08:00', sourceKind: 'official-cache' }
+      { nowISO: '2026-05-31T08:59:00+08:00', sourceKind: 'official-cache' }
     );
 
     expect(dataset.summary.currentStationCount).toBe(1);
 
-    const agedDataset = recomputeAqiDatasetFreshness(dataset, '2026-05-30T12:00:00+08:00');
+    const agedDataset = recomputeAqiDatasetFreshness(dataset, '2026-05-31T09:03:00+08:00');
 
-    expect(agedDataset.records[0]).toMatchObject({ isStale: true, hoursSinceUpdate: 3 });
+    expect(agedDataset.records[0]).toMatchObject({ isStale: true, hoursSinceUpdate: 24.05 });
     expect(agedDataset.summary.currentStationCount).toBe(0);
     expect(agedDataset.summary.worstStation).toBeNull();
   });

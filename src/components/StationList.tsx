@@ -1,7 +1,7 @@
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { AqiStationRecord } from '../lib/aqi';
-import { formatHours } from '../lib/format';
+import { formatAge } from '../lib/format';
 import { AQI_SCALE, AQI_SWATCHES } from '../lib/palette';
 
 type StationListProps = {
@@ -96,7 +96,7 @@ export function StationList({ stations, selectedId, canShowCurrent, onSelect }: 
                   <span className="block truncate text-base font-semibold">{station.stationName}</span>
                   <span className="block truncate text-base text-muted">
                     {station.county}
-                    {live ? ` · ${station.category.label}` : ` · 資料過期（${formatHours(station.hoursSinceUpdate)}）`}
+                    {live ? ` · ${station.category.label}` : ` · 超過 24 小時（${formatAge(station.hoursSinceUpdate)}）`}
                   </span>
                 </span>
               </button>
@@ -124,7 +124,7 @@ export function MapLegend({ dimmed }: { dimmed: boolean }) {
       ))}
       <li className="flex items-center gap-2">
         <span className="h-3 w-3 rounded-sm outline-dashed outline-1 outline-faint" aria-hidden="true" />
-        <span>過期</span>
+        <span>超過 24 小時</span>
       </li>
       <li className="flex items-center gap-2">
         <span className="h-3 w-3 rounded-full bg-faint" aria-hidden="true" />

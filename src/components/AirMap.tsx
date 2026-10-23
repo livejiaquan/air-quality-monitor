@@ -69,7 +69,7 @@ export function AirMap({ stations, selectedId, canShowCurrent, onSelect }: AirMa
         iconSize: [0, 0],
         html: `<span class="${classes}" style="--fill:${swatch.fill};--ink:${swatch.ink}">${asPin ? station.aqi : ''}</span>`
       });
-      const statusText = live ? station.category.label : '資料過期';
+      const statusText = live ? station.category.label : '超過 24 小時';
       L.marker([station.latitude!, station.longitude!], {
         icon,
         keyboard: true,
