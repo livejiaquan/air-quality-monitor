@@ -1,4 +1,4 @@
-import { Moon, RotateCw, Sun, Wind } from 'lucide-react';
+import { Moon, RotateCw, Sun } from 'lucide-react';
 import { getFreshnessTier, type AqiDataset } from '../lib/aqi';
 import { formatAge, formatPublishLabel } from '../lib/format';
 
@@ -14,11 +14,13 @@ export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefresh
   return (
     <header className="sticky top-0 z-[1000] border-b border-line bg-surface/90 backdrop-blur-md">
       <div className="flex h-16 items-center gap-3 px-4 sm:h-20 sm:px-12">
-        <a href="./" className="flex h-11 min-w-0 items-center gap-3" aria-label="台灣空氣品質 首頁">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-white dark:text-canvas">
-            <Wind aria-hidden="true" className="h-[18px] w-[18px]" />
+        {/* Brand mark + wordmark, shared structure across the portfolio's sites. */}
+        <a href="./" className="flex h-11 min-w-0 items-center gap-[10px]" aria-label="台灣空氣品質 首頁">
+          <img src={`${import.meta.env.BASE_URL}brand/mark.svg`} alt="" width={32} height={32} className="h-8 w-8 shrink-0" />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate text-base font-semibold tracking-[-0.01em]">台灣空氣品質</span>
+            <span className="hidden truncate text-xs font-medium text-muted min-[400px]:block">環境部即時 AQI</span>
           </span>
-          <span className="truncate text-base font-bold tracking-tight sm:text-lg">台灣空氣品質</span>
         </a>
         <div className="-mr-2 ml-auto flex items-center gap-1">
           {dataset && <FreshnessPill dataset={dataset} />}
@@ -31,7 +33,7 @@ export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefresh
               title="重新讀取資料"
               className="grid h-11 w-11 place-items-center rounded-control text-muted transition hover:bg-sunken hover:text-ink disabled:cursor-wait"
             >
-              <RotateCw aria-hidden="true" className={`h-[18px] w-[18px] ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RotateCw aria-hidden="true" className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
           )}
           <button
@@ -41,7 +43,7 @@ export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefresh
             title={theme === 'dark' ? '淺色模式' : '深色模式'}
             className="grid h-11 w-11 place-items-center rounded-control text-muted transition hover:bg-sunken hover:text-ink"
           >
-            {theme === 'dark' ? <Sun aria-hidden="true" className="h-[18px] w-[18px]" /> : <Moon aria-hidden="true" className="h-[18px] w-[18px]" />}
+            {theme === 'dark' ? <Sun aria-hidden="true" className="h-5 w-5" /> : <Moon aria-hidden="true" className="h-5 w-5" />}
           </button>
         </div>
       </div>

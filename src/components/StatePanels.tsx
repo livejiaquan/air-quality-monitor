@@ -14,7 +14,7 @@ export function ErrorPanel({ onRetry }: { onRetry: () => void }) {
   return (
     <main id="main-content" className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6">
       <section role="alert" className="rounded-card ring-1 ring-line bg-surface p-8 text-center shadow-card">
-        <AlertTriangle aria-hidden="true" className="mx-auto h-9 w-9 text-warn" />
+        <AlertTriangle aria-hidden="true" className="mx-auto h-6 w-6 text-warn" />
         <h1 className="mt-4 text-xl font-bold">暫時無法載入空氣品質資料</h1>
         <p className="mx-auto mt-2 max-w-md text-base text-muted">可能是網路連線問題或資料快取暫時無法讀取。你可以重試，或直接前往環境部監測網查看。</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
