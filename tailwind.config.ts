@@ -37,7 +37,8 @@ export default {
         warnbg: token('warnbg')
       },
       borderRadius: {
-        card: '1.5rem',
+        // Measured on the IQAir city page: 12px cards, 12px search field.
+        card: '0.75rem',
         control: '0.75rem'
       },
       transitionDuration: {
@@ -50,7 +51,8 @@ export default {
         snappy: 'cubic-bezier(0.2, 0, 0, 1)'
       },
       boxShadow: {
-        card: '0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12)'
+        // IQAir cards are flat: 1px border, no shadow.
+        card: 'none'
       }
     }
   },

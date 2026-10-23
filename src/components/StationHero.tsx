@@ -11,7 +11,6 @@ type StationHeroProps = {
   station: AqiStationRecord;
   /** True when the station was chosen by default rather than by the visitor. */
   isDefault: boolean;
-  picker: ReactNode;
 };
 
 const POLLUTANTS: Array<[keyof AqiStationRecord['pollutantValues'], string, string, number]> = [
@@ -38,7 +37,7 @@ const MAIN_POLLUTANT_KEYS: Array<[RegExp, keyof AqiStationRecord['pollutantValue
  * category-coloured tile (IQAir / Apple Weather pattern), with the station,
  * status and time beside it and advice + pollutants as the second layer.
  */
-export function StationHero({ dataset, station, isDefault, picker }: StationHeroProps) {
+export function StationHero({ dataset, station, isDefault }: StationHeroProps) {
   const official = dataset.source.kind === 'official-cache';
   // Live, aging and old readings (≤ 24 h) keep their colour and advice; only
   // unusable ones (> 24 h, invalid time, or demo data) go neutral.
@@ -49,18 +48,28 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
   const hasMainPollutant = canAdvise && station.mainPollutant && station.mainPollutant !== '無明顯污染物';
 
   return (
-    <section aria-labelledby="hero-heading" className="overflow-hidden rounded-card ring-1 ring-line bg-surface shadow-card">
-      <div className="border-b border-line p-4 sm:p-6">{picker}</div>
+    <section aria-labelledby="hero-heading" aria-live="polite">
+      {/* Page intro, after the IQAir city page: breadcrumb, 36px title, 18px subtitle. */}
+      <nav aria-label="位置" className="text-center text-sm text-faint sm:text-left">
+        臺灣 / {station.county} / <span className="font-bold text-muted">{station.stationName}</span>
+      </nav>
+      <h1 id="hero-heading" className="mt-4 text-center text-2xl font-bold tracking-tight sm:text-left sm:text-3xl">
+        {station.stationName}站的空氣品質
+      </h1>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-muted sm:justify-start sm:text-lg">
+        <span>
+          {station.county}
+          {isDefault && <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-surface px-2 text-sm font-semibold ring-1 ring-line">預設測站</span>}
+        </span>
+        <span aria-hidden="true">·</span>
+        <FreshnessLabel large publishTimeISO={station.publishTimeISO} hoursSinceUpdate={station.hoursSinceUpdate} hasFutureTimestamp={station.hasFutureTimestamp} />
+      </div>
 
-      <div
-        aria-live="polite"
-        className="grid gap-8 p-4 sm:p-6 lg:grid-cols-12"
-        style={{ background: `linear-gradient(180deg, ${swatch.fill}24 0%, transparent 70%)` }}
-      >
-        <div className="lg:col-span-7">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="flex flex-col rounded-card bg-surface p-4 ring-1 ring-line sm:p-6">
           <div className="flex items-center gap-4 sm:gap-6">
             <div
-              className={`grid h-32 w-32 shrink-0 place-items-center rounded-card sm:h-52 sm:w-52 ${canAdvise ? 'shadow-card' : 'border-2 border-dashed border-faint/60 bg-surface'}`}
+              className={`grid h-32 w-32 shrink-0 place-items-center rounded-card sm:h-40 sm:w-40 ${canAdvise ? '' : 'border-2 border-dashed border-faint/60 bg-surface'}`}
               style={canAdvise ? { background: swatch.fill, color: swatch.ink } : undefined}
             >
               <div className="text-center">
@@ -69,30 +78,16 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
               </div>
             </div>
             <div className="min-w-0">
-              <p className="text-sm text-muted">
-                {station.county}
-                {isDefault && <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-sunken px-2 py-1 text-xs font-semibold text-muted">預設測站</span>}
-              </p>
-              <h1 id="hero-heading" className="mt-1 truncate text-xl font-bold tracking-tight sm:text-2xl">
-                {station.stationName}
-              </h1>
-              <p className="mt-2 text-lg font-bold sm:text-xl">{official ? station.category.label : '展示資料'}</p>
-              <div className="mt-2">
-                <FreshnessLabel
-                  publishTimeISO={station.publishTimeISO}
-                  hoursSinceUpdate={station.hoursSinceUpdate}
-                  hasFutureTimestamp={station.hasFutureTimestamp}
-                />
-              </div>
+              <p className="text-sm text-muted">空氣品質指標</p>
+              <p className="mt-1 text-xl font-bold">{official ? station.category.label : '展示資料'}</p>
+              {hasMainPollutant && (
+                <p className="mt-2 text-base text-muted">
+                  主要污染物：<span className="font-semibold text-ink">{station.mainPollutant}</span>
+                </p>
+              )}
             </div>
           </div>
-
-          {hasMainPollutant && (
-            <p className="mt-6 text-base text-muted">
-              主要污染物：<span className="font-semibold text-ink">{station.mainPollutant}</span>
-            </p>
-          )}
-          <div className="mt-4">
+          <div className="mt-6 lg:mt-auto lg:pt-6">
             <AqiScale aqi={canAdvise ? station.aqi : null} />
           </div>
           <div className="mt-4">
@@ -100,7 +95,7 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
           </div>
         </div>
 
-        <div className="space-y-4 lg:col-span-5">
+        <div className="space-y-4 rounded-card bg-surface p-4 ring-1 ring-line sm:p-6">
           {canAdvise ? (
             <>
               <Advice icon={<Users aria-hidden="true" className="h-4 w-4" />} title="一般民眾" text={station.category.advice.general} />
@@ -157,7 +152,7 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
 
 function Advice({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
-    <div className="rounded-control bg-sunken p-4">
+    <div className="border-b border-line pb-4">
       <p className="flex items-center gap-2 text-sm font-bold text-muted">
         {icon}
         {title}

@@ -8,19 +8,21 @@ type FreshnessLabelProps = {
   publishTimeISO: string | null;
   hoursSinceUpdate: number | null;
   hasFutureTimestamp?: boolean;
+  /** Subtitle size (18px on desktop) instead of the default 14px. */
+  large?: boolean;
 };
 
 /**
  * "資料時間 HH:MM · N 小時前" next to the reading. Neutral while live, amber once
  * the reading is more than 90 minutes old; never a warning banner.
  */
-export function FreshnessLabel({ publishTimeISO, hoursSinceUpdate, hasFutureTimestamp = false }: FreshnessLabelProps) {
+export function FreshnessLabel({ publishTimeISO, hoursSinceUpdate, hasFutureTimestamp = false, large = false }: FreshnessLabelProps) {
   const tier = getFreshnessTier(hoursSinceUpdate, hasFutureTimestamp);
   const amber = tier !== 'live';
   const age = hasFutureTimestamp ? '時間異常' : formatAge(hoursSinceUpdate);
 
   return (
-    <p className={`flex flex-wrap items-center gap-x-2 text-sm ${amber ? 'font-semibold text-warn' : 'text-muted'}`}>
+    <p className={`flex flex-wrap items-center gap-x-2 ${large ? 'text-sm sm:text-lg' : 'text-sm'} ${amber ? 'font-semibold text-warn' : 'text-muted'}`}>
       <Clock3 aria-hidden="true" className="h-4 w-4" />
       <span className="tabular">資料時間 {formatPublishLabel(publishTimeISO)}</span>
       <span aria-hidden="true">·</span>

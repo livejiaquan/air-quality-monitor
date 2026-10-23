@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: light;
-  --canvas: 246 247 249;
+  --canvas: 236 238 242;
   --surface: 255 255 255;
   --sunken: 241 243 246;
   --line: 226 230 236;
@@ -38,7 +38,8 @@ html,
 body {
   margin: 0;
   min-width: 320px;
-  background: rgb(var(--canvas));
+  /* IQAir-style page wash: white at the top fading into the grey canvas. */
+  background: linear-gradient(180deg, rgb(var(--surface)) 0, rgb(var(--canvas)) 320px) no-repeat, rgb(var(--canvas));
   color: rgb(var(--ink));
   font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
 }

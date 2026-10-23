@@ -12,8 +12,8 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefreshing = false }: SiteHeaderProps) {
   return (
-    <header className="sticky top-0 z-[1000] border-b border-line/80 bg-canvas/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 sm:px-6">
+    <header className="sticky top-0 z-[1000] border-b border-line bg-surface/90 backdrop-blur-md">
+      <div className="flex h-16 items-center gap-3 px-4 sm:h-20 sm:px-12">
         <a href="./" className="flex h-11 min-w-0 items-center gap-3" aria-label="台灣空氣品質 首頁">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-white dark:text-canvas">
             <Wind aria-hidden="true" className="h-[18px] w-[18px]" />

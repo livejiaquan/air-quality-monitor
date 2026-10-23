@@ -144,7 +144,7 @@ export function QuickPicks({ stations, onSelect, canShowCurrent }: Omit<StationP
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <p className="shrink-0 text-sm text-muted lg:sr-only">快速切換</p>
+      <p className="sr-only">快速切換</p>
       {/* One swipeable row on phones so the focal AQI stays high on the first screen. */}
       <ul className="-my-1 -mr-4 flex min-w-0 gap-2 overflow-x-auto py-1 pr-4 [scrollbar-width:none] sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0 [&::-webkit-scrollbar]:hidden">
         {picks.map((station) => {
@@ -156,7 +156,7 @@ export function QuickPicks({ stations, onSelect, canShowCurrent }: Omit<StationP
                 type="button"
                 onClick={() => onSelect(station)}
                 className="inline-flex h-11 items-center gap-2 rounded-full border border-line bg-surface pl-3 pr-1 text-sm font-medium transition hover:border-faint hover:bg-sunken"
-                aria-label={`${station.county}${station.stationName}，AQI ${station.aqi}${live ? `，${station.category.label}` : '，超過 24 小時'}`}
+                aria-label={`${station.county.replace(/[市縣]$/, '')}·${station.stationName}，AQI ${station.aqi}${live ? `，${station.category.label}` : '，超過 24 小時'}`}
               >
                 {station.county.replace(/[市縣]$/, '')}·{station.stationName}
                 <span className="tabular min-w-[2.5rem] rounded-full px-2 py-1 text-center text-sm font-bold" style={{ background: swatch.fill, color: swatch.ink }}>

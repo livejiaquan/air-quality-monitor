@@ -22,28 +22,17 @@ function write(key: string, value: string | null) {
   }
 }
 
-function systemTheme(): ThemeChoice {
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeChoice>(() => {
     const saved = read(THEME_KEY);
-    return saved === 'dark' || saved === 'light' ? saved : systemTheme();
+    // Light by default, like the IQAir reference; dark stays one tap away and is remembered.
+    return saved === 'dark' || saved === 'light' ? saved : 'light';
   });
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0b0f14' : '#f6f7f9');
   }, [theme]);
-
-  useEffect(() => {
-    if (read(THEME_KEY)) return;
-    const query = window.matchMedia?.('(prefers-color-scheme: dark)');
-    const onChange = () => setTheme(query.matches ? 'dark' : 'light');
-    query?.addEventListener('change', onChange);
-    return () => query?.removeEventListener('change', onChange);
-  }, []);
 
   const toggle = useCallback(() => {
     setTheme((current) => {
