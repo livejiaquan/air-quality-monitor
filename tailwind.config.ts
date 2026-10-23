@@ -6,7 +6,7 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: 'class',
   theme: {
-    // The only allowed type scale (visual standard A): 12/14/16/18/22/28/36/48/64/96.
+    // The only type scale used on the site: 12/14/16/18/22/28/36/48/64/96.
     fontSize: {
       xs: ['12px', { lineHeight: '1.5' }],
       sm: ['14px', { lineHeight: '1.6' }],
@@ -37,7 +37,7 @@ export default {
         warnbg: token('warnbg')
       },
       borderRadius: {
-        // Measured on the IQAir city page: 12px cards, 12px search field.
+        // 12px cards and search field.
         card: '0.75rem',
         control: '0.75rem'
       },
@@ -51,7 +51,7 @@ export default {
         snappy: 'cubic-bezier(0.2, 0, 0, 1)'
       },
       boxShadow: {
-        // IQAir cards are flat: 1px border, no shadow.
+        // Cards are flat: 1px border, no shadow.
         card: 'none'
       }
     }

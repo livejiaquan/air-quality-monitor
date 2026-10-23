@@ -31,7 +31,7 @@ export const AQI_SCALE: Array<{ id: AqiCategoryId; label: string; min: number; m
 
 /**
  * Position (0–100%) of an AQI value on a scale where each of the six
- * categories gets an equal-width segment, like the AirNow / Apple Weather bar.
+ * categories gets an equal-width segment, like a typical AQI scale bar.
  */
 export function getScalePosition(aqi: number): number {
   if (!Number.isFinite(aqi) || aqi <= 0) return 0;

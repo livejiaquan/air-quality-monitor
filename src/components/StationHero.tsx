@@ -34,7 +34,7 @@ const MAIN_POLLUTANT_KEYS: Array<[RegExp, keyof AqiStationRecord['pollutantValue
 
 /**
  * The page's single focal point: the chosen station's AQI as a large
- * category-coloured tile (IQAir / Apple Weather pattern), with the station,
+ * category-coloured tile, with the station,
  * status and time beside it and advice + pollutants as the second layer.
  */
 export function StationHero({ dataset, station, isDefault }: StationHeroProps) {
@@ -49,7 +49,7 @@ export function StationHero({ dataset, station, isDefault }: StationHeroProps) {
 
   return (
     <section aria-labelledby="hero-heading" aria-live="polite">
-      {/* Page intro, after the IQAir city page: breadcrumb, 36px title, 18px subtitle. */}
+      {/* Page intro: breadcrumb, 36px title, 18px subtitle. */}
       <nav aria-label="位置" className="text-center text-sm text-faint sm:text-left">
         臺灣 / {station.county} / <span className="font-bold text-muted">{station.stationName}</span>
       </nav>

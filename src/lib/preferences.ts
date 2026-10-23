@@ -25,7 +25,7 @@ function write(key: string, value: string | null) {
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeChoice>(() => {
     const saved = read(THEME_KEY);
-    // Light by default, like the IQAir reference; dark stays one tap away and is remembered.
+    // Light by default; dark stays one tap away and is remembered.
     return saved === 'dark' || saved === 'light' ? saved : 'light';
   });
 
