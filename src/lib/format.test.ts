@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatHours, formatPublishLabel } from './format';
+import { formatAge, formatHours, formatPublishLabel } from './format';
 
 describe('formatHours', () => {
   it('does not round a still-fresh age up to the three-hour hard stop', () => {
@@ -27,5 +27,17 @@ describe('formatPublishLabel', () => {
   it('falls back for missing or invalid input', () => {
     expect(formatPublishLabel(null, now)).toBe('時間未知');
     expect(formatPublishLabel('not-a-date', now)).toBe('時間未知');
+  });
+});
+
+describe('formatAge', () => {
+  it('uses whole minutes, hours or days', () => {
+    expect(formatAge(0.005)).toBe('1 分鐘前');
+    expect(formatAge(0.5)).toBe('30 分鐘前');
+    expect(formatAge(1)).toBe('1 小時前');
+    expect(formatAge(4.8)).toBe('4 小時前');
+    expect(formatAge(47.9)).toBe('47 小時前');
+    expect(formatAge(50)).toBe('2 天前');
+    expect(formatAge(null)).toBe('時間未知');
   });
 });

@@ -4,6 +4,7 @@ import { AQI_SCALE, AQI_SWATCHES } from '../lib/palette';
 
 /** Second-layer national picture: headline counts, category mix and county ranking. */
 export function Overview({ summary, dominantPollutant }: { summary: AqiSummary; dominantPollutant: string }) {
+  const excluded = summary.staleStationCount;
   const total = summary.currentStationCount;
   const healthyShare = total ? Math.round((summary.healthyStationCount / total) * 100) : 0;
   const maxCountyAqi = Math.max(150, ...summary.counties.map((county) => county.maxAqi));
@@ -12,7 +13,7 @@ export function Overview({ summary, dominantPollutant }: { summary: AqiSummary; 
     <section aria-labelledby="overview-heading" className="rounded-card ring-1 ring-line bg-surface p-4 shadow-card sm:p-6">
       <h2 id="overview-heading" className="text-xl font-bold">全台現況</h2>
       <p className="mt-1 text-sm text-muted">
-        {total} 個有效測站 · 中位數 AQI <span className="tabular">{formatNumber(summary.medianAqi)}</span> · 主要污染物 {dominantPollutant}
+        {total} 個有效測站{excluded > 0 && `（${excluded} 站超過 24 小時未更新，未列入）`} · 中位數 AQI <span className="tabular">{formatNumber(summary.medianAqi)}</span> · 主要污染物 {dominantPollutant}
       </p>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-12">

@@ -1,6 +1,6 @@
 import { Moon, RotateCw, Sun, Wind } from 'lucide-react';
-import type { AqiDataset } from '../lib/aqi';
-import { formatHours, formatPublishLabel } from '../lib/format';
+import { getFreshnessTier, type AqiDataset } from '../lib/aqi';
+import { formatAge, formatPublishLabel } from '../lib/format';
 
 type SiteHeaderProps = {
   dataset?: AqiDataset;
@@ -52,19 +52,17 @@ export function SiteHeader({ dataset, theme, onToggleTheme, onRefresh, isRefresh
 function FreshnessPill({ dataset }: { dataset: AqiDataset }) {
   const { summary } = dataset;
   const official = dataset.source.kind === 'official-cache';
-  const fresh = official && !summary.isStale;
-  const label = !official
-    ? '展示資料'
-    : fresh
-      ? formatPublishLabel(summary.newestPublishTimeISO)
-      : `已過期 ${formatHours(summary.hoursSinceUpdate).replace("前", "")}`;
+  // Tier of the newest station reading, computed against the browser clock.
+  const tier = official ? getFreshnessTier(summary.hoursSinceUpdate) : 'unusable';
+  const fresh = tier === 'live';
+  const label = !official ? '展示資料' : fresh ? formatPublishLabel(summary.newestPublishTimeISO) : formatAge(summary.hoursSinceUpdate);
 
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${
         fresh ? 'bg-sunken text-muted' : 'bg-warnbg text-warn'
       }`}
-      title={fresh ? `最新測站資料 ${formatHours(summary.hoursSinceUpdate)}` : '沒有 3 小時內的有效測站資料'}
+      title={`資料時間 ${formatPublishLabel(summary.newestPublishTimeISO)} · ${formatAge(summary.hoursSinceUpdate)}`}
     >
       <span className={`h-2 w-2 rounded-full ${fresh ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
       <span className="tabular">

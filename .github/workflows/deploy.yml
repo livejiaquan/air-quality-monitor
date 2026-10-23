@@ -12,9 +12,9 @@ on:
       - main
   workflow_dispatch:
   schedule:
-    # GitHub delays or drops scheduled runs under load; two slots per hour
-    # keeps the published snapshot within the 3-hour freshness window.
-    - cron: '12,42 * * * *'
+    # GitHub treats schedules as best effort (real gaps of 3–4 h were observed),
+    # so ask for three staggered slots an hour; the page labels freshness itself.
+    - cron: '3,23,43 * * * *'
 
 permissions:
   contents: read

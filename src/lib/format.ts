@@ -35,3 +35,11 @@ export function formatPublishLabel(iso: string | null | undefined, now = new Dat
   const time = new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
   return day(date) === day(now) ? time : `${day(date)} ${time}`;
 }
+
+/** Whole-unit age for freshness labels: "25 分鐘前", "4 小時前", "2 天前". */
+export function formatAge(hours: number | null | undefined): string {
+  if (typeof hours !== 'number' || Number.isNaN(hours)) return '時間未知';
+  if (hours < 1) return `${Math.max(1, Math.floor(hours * 60))} 分鐘前`;
+  if (hours < 48) return `${Math.floor(hours)} 小時前`;
+  return `${Math.floor(hours / 24)} 天前`;
+}

@@ -114,7 +114,27 @@ export type NormalizeOptions = {
 };
 
 const SOURCE_URL = 'https://data.moenv.gov.tw/dataset/detail/AQX_P_432';
-const STALE_THRESHOLD_HOURS = 3;
+// MOENV publishes hourly but the Pages refresh runs every 3–4 hours in practice,
+// so only data older than a day is treated as unusable (stale-state standard v1).
+const STALE_THRESHOLD_HOURS = 24;
+
+export type FreshnessTier = 'live' | 'aging' | 'old' | 'unusable';
+
+/** Upper bounds (inclusive, hours since the MOENV publish time) for each tier. */
+export const FRESHNESS_TIER_LIMITS = { live: 1.5, aging: 6, old: STALE_THRESHOLD_HOURS } as const;
+
+/**
+ * Three-tier label for how old a reading is, computed in the browser from the
+ * data's own publish time: live ≤ 90 min (one hourly MOENV cycle of slack),
+ * aging ≤ 6 h, old ≤ 24 h, unusable beyond that or when the time is invalid.
+ */
+export function getFreshnessTier(hoursSinceUpdate: number | null | undefined, hasFutureTimestamp = false): FreshnessTier {
+  if (hasFutureTimestamp || typeof hoursSinceUpdate !== 'number' || Number.isNaN(hoursSinceUpdate)) return 'unusable';
+  if (hoursSinceUpdate <= FRESHNESS_TIER_LIMITS.live) return 'live';
+  if (hoursSinceUpdate <= FRESHNESS_TIER_LIMITS.aging) return 'aging';
+  if (hoursSinceUpdate <= FRESHNESS_TIER_LIMITS.old) return 'old';
+  return 'unusable';
+}
 const FUTURE_TIMESTAMP_TOLERANCE_HOURS = 0.25;
 
 // Paraphrased from the MOENV AQI health guidance effective 2025-01-01.
@@ -418,7 +438,7 @@ export function getFreshness(
     newestPublishTime: formatTaiwanDate(newestPublishTimeISO),
     newestPublishTimeISO,
     hoursSinceUpdate: round(Math.max(0, hoursSinceUpdate), 2),
-    isStale: hasFutureTimestamp || hoursSinceUpdate >= STALE_THRESHOLD_HOURS,
+    isStale: hasFutureTimestamp || hoursSinceUpdate > STALE_THRESHOLD_HOURS,
     hasFutureTimestamp
   };
 }
