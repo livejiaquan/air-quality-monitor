@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="台灣空氣品質">
+  <!-- Brand mark: rounded square (22% radius) in the site accent, Lucide "wind" at 58%, stroke 2. -->
+  <rect width="64" height="64" rx="14.08" fill="#29aea0"/>
+  <g transform="translate(13.44 13.44) scale(1.5467)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12.8 19.6A2 2 0 1 0 14 16H2"/>
+    <path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/>
+    <path d="M9.8 4.4A2 2 0 1 1 11 8H2"/>
+  </g>
+</svg>
