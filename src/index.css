@@ -38,7 +38,7 @@ html,
 body {
   margin: 0;
   min-width: 320px;
-  /* IQAir-style page wash: white at the top fading into the grey canvas. */
+  /* Page wash: white at the top fading into the grey canvas. */
   background: linear-gradient(180deg, rgb(var(--surface)) 0, rgb(var(--canvas)) 320px) no-repeat, rgb(var(--canvas));
   color: rgb(var(--ink));
   font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
@@ -73,7 +73,7 @@ input:focus-visible,
   outline-offset: 2px;
 }
 
-/* Icon style (portfolio standard): Lucide only, 1.75 stroke, round caps and joins. */
+/* Icon style: Lucide only, 1.75 stroke, round caps and joins. */
 svg.lucide {
   stroke-width: 1.75;
   stroke-linecap: round;

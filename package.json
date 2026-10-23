@@ -1,5 +1,12 @@
 {
-  "name": "taiwan-aqi-dashboard",
+  "name": "air-quality-monitor",
+  "description": "台灣即時空氣品質：搜尋測站查看環境部 AQI、污染物與活動建議，全台測站地圖每小時更新。",
+  "author": "Lim Jia Quan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/livejiaquan/air-quality-monitor.git"
+  },
   "private": true,
   "version": "0.1.0",
   "type": "module",

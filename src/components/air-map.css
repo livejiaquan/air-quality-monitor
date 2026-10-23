@@ -1,5 +1,5 @@
 /* Loaded after leaflet.css (see AirMap.tsx) so these rules win over Leaflet defaults. */
-/* Leaflet map: AQI number pins (aqicn-style) */
+/* Leaflet map: AQI number pins */
 .leaflet-container {
   background: rgb(var(--sunken));
   font: inherit;

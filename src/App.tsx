@@ -166,7 +166,7 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
     if (dataset.source.kind !== 'official-cache') {
       messages.push('目前是範例或備援資料，只供介面展示；本站不會用這些資料提供現在的健康或活動結論。');
     }
-    // Only the > 24 h case earns a top note (stale-state standard v1); aging and
+    // Only the > 24 h case earns a top note; aging and
     // old readings are labelled next to the data instead.
     if (records.length === 0) {
       messages.push('目前沒有可顯示的測站資料，可能是快取尚未產生或資料格式異常。');
@@ -213,7 +213,7 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
         </section>
       )}
 
-      {/* Search row, after the IQAir city page: full-width search, then quick picks. */}
+      {/* Full-width station search at the top. */}
       <div>
         <StationPicker stations={records} selected={pickedStation} onSelect={selectStation} canShowCurrent={isOfficialSource} />
       </div>
@@ -234,7 +234,7 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
 
       {hasCurrentData && <Rankings stations={currentRecords} onSelect={revealStation} />}
 
-      {/* Major-city shortcuts near the end, like IQAir's "most polluted city" chips. */}
+      {/* Shortcuts to the major-city stations. */}
       <section aria-labelledby="quick-heading" className="space-y-2">
         <h2 id="quick-heading" className="text-base font-bold">主要城市</h2>
         <QuickPicks stations={records} onSelect={(station) => station && revealStation(station)} canShowCurrent={isOfficialSource} />

@@ -115,7 +115,7 @@ export type NormalizeOptions = {
 
 const SOURCE_URL = 'https://data.moenv.gov.tw/dataset/detail/AQX_P_432';
 // MOENV publishes hourly but the Pages refresh runs every 3–4 hours in practice,
-// so only data older than a day is treated as unusable (stale-state standard v1).
+// so only data older than a day is treated as unusable.
 const STALE_THRESHOLD_HOURS = 24;
 
 export type FreshnessTier = 'live' | 'aging' | 'old' | 'unusable';

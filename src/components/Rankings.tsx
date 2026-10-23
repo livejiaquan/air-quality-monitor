@@ -8,7 +8,7 @@ type RankingsProps = {
 
 const ROWS = 5;
 
-/** Paired "highest / lowest" ranking cards, after IQAir's most/least polluted city tables. */
+/** Paired "highest / lowest AQI" ranking cards. */
 export function Rankings({ stations, onSelect }: RankingsProps) {
   const sorted = [...stations].sort((a, b) => b.aqi - a.aqi);
   const highest = sorted.slice(0, ROWS);

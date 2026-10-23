@@ -1,80 +1,70 @@
-# 台灣空氣品質 · Taiwan AQI
+# 台灣空氣品質
+
+搜尋你生活或活動區域的測站，查看環境部最新的 AQI、各污染物濃度，以及分別給一般民眾和敏感族群的活動建議；全台測站地圖每小時更新。資料時間永遠顯示在 AQI 旁邊，資料太舊時會明確標示，不會把舊資料當成現在的狀況。
 
 **線上版：<https://livejiaquan.github.io/air-quality-monitor/>**
 
-搜尋你生活或活動區域的測站，就能看到環境部最新 AQI、各污染物濃度，以及分開給一般民眾和敏感族群的活動建議；全台測站地圖每小時更新。資料過期時會清楚標示，並暫停「現在」的結論，不會用舊資料假裝即時。
-
 <p>
-  <img src="docs/screenshots/focal-desktop-light.png" alt="桌面版首屏：臺北中山 AQI 58 普通的大色塊為主焦點，旁邊是站名、發布時間與活動建議" width="64%" />
-  <img src="docs/screenshots/focal-mobile-dark.png" alt="手機深色模式首屏：AQI 大色塊與快速切換測站" width="30%" />
+  <img src="docs/screenshots/desktop.jpg" alt="桌面版：臺北中山站的 AQI 大色塊、色階條、活動建議與污染物濃度" width="62%" />
+  <img src="docs/screenshots/mobile.jpg" alt="手機版：同一個畫面的單欄排版" width="30%" />
 </p>
 
 ## 功能
 
-- **我的測站**：輸入站名或縣市即可搜尋（「台／臺」都能用），或一鍵選六都主要測站；選過的測站會記住，下次打開直接顯示。還沒選之前，預設顯示臺北中山站，並標明是「預設測站」。
-- **大數字＋類別＋色階條**：AQI 數字、官方類別名稱和六段色階條同時呈現，顏色不是唯一線索，色盲使用者也能判讀。
-- **全台地圖與列表**：Leaflet 地圖上每個測站都是一顆數字標記；手機可切換地圖／列表，桌面兩者並排。
-- **資料時效**：資料時間永遠顯示在 AQI 旁邊，並在瀏覽器端依環境部的發布時間分成三段：90 分鐘內為即時，6 小時內為稍舊，24 小時內為過舊（改用琥珀色標示並附官方連結）。只有超過 24 小時的測站才會改成灰色虛線、排除於排行，也不提供建議。
-- **深淺色模式**：預設跟隨系統，也可以手動切換。
-- **全台概況**：類別分布與各縣市最高值，只計算有效且新鮮的測站。
+- **我的測站**：輸入站名或縣市搜尋（「台」「臺」都找得到），選過的測站會記在瀏覽器，下次直接顯示。
+- **AQI 一眼看懂**：依等級著色的大色塊、類別名稱和色階條同時呈現，不只靠顏色傳達。
+- **全台地圖**：Leaflet 地圖上每個測站都是一個數字標記，重疊時只保留較重要的數字，其餘縮成小圓點。
+- **排行與列表**：AQI 最高與最低的五個測站，以及可依縣市篩選、依 AQI 排序的完整測站列表。
+- **資料時效**：從環境部的發布時間算起，分成即時、稍舊、過舊、無法使用四段，在瀏覽器端依現在時間計算。
+- **深淺色模式**：預設淺色，可手動切換。
 
-使用者研究（persona、任務、非功能需求、裝置評估）見 [docs/ux-research.md](./docs/ux-research.md)；設計研究（同類產品與開源實作比較、主流前端參考、設計語言）見 [docs/design-research.md](./docs/design-research.md)。
+## 資料來源與授權
 
-## 架構
+資料來自環境部環境資料開放平臺的[空氣品質指標（AQX_P_432）](https://data.moenv.gov.tw/dataset/detail/AQX_P_432)，依[政府資料開放授權條款第 1 版](https://data.gov.tw/license)再利用；地圖底圖 © OpenStreetMap 貢獻者。本站不是環境部官方網站，即時資料未經品保，健康提示依環境部現行的 AQI 活動建議精簡整理，僅供生活參考，不是醫療建議。
 
-```
-MOENV AQX_P_432 ──(GitHub Actions，server-side，帶 secret)──▶ scripts/fetch-aqi.mjs
-                                                              │ 欄位白名單＋production contract 驗證
-                                                              ▼
-                                               public/data/aqi-latest.json（只存在 build 產物中）
-                                                              │
-                                    Vite build ──▶ dist/ ──▶ GitHub Pages（純靜態）
-```
+程式碼採 [MIT License](./LICENSE)。
 
-- **前端**：Vite、React 19、TypeScript、Tailwind CSS、Leaflet（OpenStreetMap 圖磚）、lucide 圖示。
-- **API key 不會進前端**：瀏覽器只讀取同站的靜態 JSON；key 只存在 Actions secret，部署前會掃描 `dist/`，確認沒有任何憑證字串。
-- **Fail-closed**：抓取、驗證、lint、測試或 build 任一步失敗都不部署，線上保留上一版；前端也會逐站重新計算時效。
-- **不產生 bot commit**：每次部署都是在 workflow 內即時抓資料，快取不再 commit 回 repo。
+## 本機執行
 
-### 資料可信度契約
-
-`scripts/aqi-cache-contract.mjs` 在寫入快取前會檢查以下條件，並有完整測試：
-
-- 至少 80 個有效測站，涵蓋 22 個縣市，有效比例至少 95%。
-- `siteid` 不重複；AQI 為 0–500 的整數。
-- 發布時間依 Asia/Taipei 解析，不得超過 3 小時，也不得超前現在 15 分鐘以上。
-- 缺值保留為空，不轉成 0；全體或單站的發布時間倒退都會拒絕。
-
-健康提示依環境部 2025-01-01 起的[現行 AQI 健康影響與活動建議](https://airtw.moenv.gov.tw/CHT/Information/Standard/AirQualityIndicatorNew.aspx#Health)精簡整理，不是醫療建議。即時資料未經品保，正式引用請使用環境部品保後的資料。
-
-## 本機開發
-
-需要 Node.js 22：
+需要 Node.js 22。
 
 ```bash
 npm ci
 npm run dev
 ```
 
-repo 內附一份已通過驗證的快照（`public/data/aqi-latest.json`）。隨著時間過去，畫面會依序顯示稍舊、過舊的標示，超過 24 小時後就不提供活動建議，這是預期行為。其他可重現的展示狀態：`/?demo=loading`、`/?demo=empty`、`/?demo=error`。
+接著打開終端機顯示的網址。repo 內附一份驗證過的資料快照（`public/data/aqi-latest.json`），資料變舊時畫面會依序顯示稍舊、過舊的標示，這是預期行為。其他可重現的狀態：`/?demo=loading`、`/?demo=empty`、`/?demo=error`。
 
-用自己的 key 抓最新資料（[向環境部申請](https://data.moenv.gov.tw/)）：
+要抓最新資料，需要[向環境部申請](https://data.moenv.gov.tw/) API key：
 
 ```bash
-MOENV_API_KEY=your-key npm run fetch:aqi
+MOENV_API_KEY=你的key npm run fetch:aqi
 ```
 
-驗證：
+這個指令會驗證資料，通過才寫入快照；失敗時保留原本的檔案。
+
+常用指令：
 
 ```bash
 npm run lint && npm run typecheck && npm run test && npm run build
+npm run validate:aqi   # 驗證 public/data/aqi-latest.json
 ```
+
+## 專案結構
+
+```
+src/
+  App.tsx              頁面組合、資料載入與更新
+  components/          介面元件（測站搜尋、AQI 焦點卡、地圖、列表、排行等）
+  lib/                 AQI 分級與資料正規化、時效計算、色票、標記避讓等
+scripts/               抓取與驗證環境部資料的腳本（含測試）
+public/                favicon、品牌標記與資料快照
+docs/design-notes.md   設計取捨筆記
+.github/workflows/     CI 與部署
+```
+
+技術：Vite、React 19、TypeScript、Tailwind CSS、Leaflet、Lucide 圖示、Vitest。
 
 ## 部署
 
-- `.github/workflows/deploy.yml`：在 push main、手動觸發或排程（每小時兩次）時執行，流程是抓資料、驗證、測試、build，最後部署到 GitHub Pages。需要在 repository secret 設定 `MOENV_API_KEY`（舊的 `API_KEY` 名稱也能用）。
-- `.github/workflows/ci.yml`：PR 時跑 lint、typecheck、test 和 build，不使用任何 secret。
-
-## 授權與資料顯名
-
-程式碼採 [MIT License](./LICENSE)。資料來源為環境部「[空氣品質指標（AQX_P_432）](https://data.moenv.gov.tw/dataset/detail/AQX_P_432)」，依[政府資料開放授權條款第 1 版](https://data.gov.tw/license)再利用；底圖 © OpenStreetMap 貢獻者。本站不是環境部官方網站。
+`.github/workflows/deploy.yml` 在 push 到 main、手動觸發或排程時執行：用 repository secret `MOENV_API_KEY`（舊的 `API_KEY` 名稱也能用）在伺服器端抓資料、驗證、跑 lint 與測試、build，最後部署到 GitHub Pages。資料只存在部署產物中，不會寫回 repo，API key 也不會進入前端。任何一步失敗都不會部署，線上維持上一版。`.github/workflows/ci.yml` 在 pull request 時只跑檢查，不使用 secret。
