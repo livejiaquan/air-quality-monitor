@@ -8,7 +8,7 @@ import { StationHero } from './components/StationHero';
 import { MapLegend, StationList } from './components/StationList';
 import { QuickPicks, StationPicker } from './components/StationPicker';
 import { recomputeAqiDatasetFreshness, type AqiDataset, type AqiStationRecord } from './lib/aqi';
-import { loadAqiDataset } from './lib/data';
+import { getDemoMode, loadAqiDataset, loadLastGoodDataset } from './lib/data';
 import { getDominantPollutant } from './lib/format';
 import { readSavedStationId, saveStationId, useTheme } from './lib/preferences';
 import { getDefaultStation, STATION_SELECTION_GUIDANCE } from './lib/stationSelection';
@@ -35,13 +35,18 @@ export default function App() {
         }
       })
       .catch((error) => {
-        if (!cancelled) {
-          setLoadState({
-            status: 'error',
-            dataset: null,
-            error: error instanceof Error ? error.message : 'Unknown AQI data loading error.'
-          });
+        if (cancelled) return;
+        const lastGood = getDemoMode() === 'error' ? null : loadLastGoodDataset();
+        if (lastGood) {
+          setLoadState({ status: 'success', dataset: lastGood, error: null });
+          setRefreshError(error instanceof Error ? error.message : 'Unknown AQI data loading error.');
+          return;
         }
+        setLoadState({
+          status: 'error',
+          dataset: null,
+          error: error instanceof Error ? error.message : 'Unknown AQI data loading error.'
+        });
       });
 
     return () => {
@@ -161,23 +166,20 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
     if (dataset.source.kind !== 'official-cache') {
       messages.push('目前是範例或備援資料，只供介面展示；本站不會用這些資料提供現在的健康或活動結論。');
     }
+    // Only the > 24 h case earns a top note (stale-state standard v1); aging and
+    // old readings are labelled next to the data instead.
     if (records.length === 0) {
       messages.push('目前沒有可顯示的測站資料，可能是快取尚未產生或資料格式異常。');
     } else if (isOfficialSource && !hasCurrentData) {
-      messages.push('目前沒有 3 小時內的有效測站資料；全台概況與活動建議已暫停，地圖與列表顯示的是各站最後一筆資料。');
-    } else if (isOfficialSource && summary.staleStationCount > 0) {
-      messages.push(`${summary.staleStationCount} 個測站資料過期或時間無效，已排除於全台概況與活動建議。`);
-    }
-    if (isOfficialSource && summary.futureTimestampCount > 0) {
-      messages.push(`${summary.futureTimestampCount} 個測站的發布時間異常晚於目前時間，已視為不可用。`);
+      messages.push('所有測站的資料都超過 24 小時，以下顯示的是各站最後一筆資料，不提供活動建議。');
     }
     if (refreshError) {
-      messages.push('背景更新失敗，目前仍保留上一版資料；請稍後再試或前往官方監測頁確認。');
+      messages.push('暫時連不上本站資料，以下顯示上次成功載入的資料。');
     }
     warnings.map(translateWarning).filter(Boolean).forEach((warning) => messages.push(warning!));
 
     return [...new Set(messages)];
-  }, [dataset.source.kind, hasCurrentData, isOfficialSource, records.length, refreshError, summary.futureTimestampCount, summary.staleStationCount, warnings]);
+  }, [dataset.source.kind, hasCurrentData, isOfficialSource, records.length, refreshError, warnings]);
   const isSevere = !hasCurrentData || records.length === 0;
 
   const selectStation = useCallback((station: AqiStationRecord | null, options: { reveal?: boolean } = {}) => {
@@ -204,7 +206,7 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
             ))}
             {isSevere && (
               <a className="font-bold underline underline-offset-2" href="https://airtw.moenv.gov.tw/" target="_blank" rel="noreferrer">
-                前往環境部空氣品質監測網查看即時資料
+                最新數據請見環境部空氣品質監測網
               </a>
             )}
           </div>

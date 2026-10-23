@@ -1,9 +1,10 @@
-import { Clock3, HeartPulse, Info, Users } from 'lucide-react';
+import { HeartPulse, Info, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { AqiDataset, AqiStationRecord } from '../lib/aqi';
-import { formatHours, formatNumber, formatPublishLabel } from '../lib/format';
+import { getFreshnessTier, type AqiDataset, type AqiStationRecord } from '../lib/aqi';
+import { formatNumber } from '../lib/format';
 import { AQI_SWATCHES } from '../lib/palette';
 import { AqiScale } from './AqiScale';
+import { FreshnessLabel, OFFICIAL_MONITOR_URL, OfficialSourceNote } from './FreshnessLabel';
 
 type StationHeroProps = {
   dataset: AqiDataset;
@@ -39,7 +40,10 @@ const MAIN_POLLUTANT_KEYS: Array<[RegExp, keyof AqiStationRecord['pollutantValue
  */
 export function StationHero({ dataset, station, isDefault, picker }: StationHeroProps) {
   const official = dataset.source.kind === 'official-cache';
+  // Live, aging and old readings (≤ 24 h) keep their colour and advice; only
+  // unusable ones (> 24 h, invalid time, or demo data) go neutral.
   const canAdvise = official && !station.isStale;
+  const tier = getFreshnessTier(station.hoursSinceUpdate, station.hasFutureTimestamp);
   const swatch = AQI_SWATCHES[canAdvise ? station.categoryId : 'unknown'];
   const mainKey = MAIN_POLLUTANT_KEYS.find(([pattern]) => pattern.test(station.mainPollutant))?.[1];
   const hasMainPollutant = canAdvise && station.mainPollutant && station.mainPollutant !== '無明顯污染物';
@@ -60,7 +64,7 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
               style={canAdvise ? { background: swatch.fill, color: swatch.ink } : undefined}
             >
               <div className="text-center">
-                <p className={`text-sm font-bold uppercase tracking-wider ${canAdvise ? 'opacity-80' : 'text-faint'}`}>{canAdvise ? 'AQI' : '快取 AQI'}</p>
+                <p className={`text-sm font-bold uppercase tracking-wider ${canAdvise ? 'opacity-80' : 'text-faint'}`}>AQI</p>
                 <p className={`tabular text-5xl font-extrabold tracking-tight sm:text-6xl ${canAdvise ? '' : 'text-faint'}`}>{station.aqi}</p>
               </div>
             </div>
@@ -72,15 +76,14 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
               <h1 id="hero-heading" className="mt-1 truncate text-xl font-bold tracking-tight sm:text-2xl">
                 {station.stationName}
               </h1>
-              <p className={`mt-2 text-lg font-bold sm:text-xl ${canAdvise ? '' : 'text-warn'}`}>
-                {canAdvise ? station.category.label : official ? '資料過期' : '展示資料'}
-              </p>
-              <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted">
-                <Clock3 aria-hidden="true" className="h-4 w-4" />
-                <span className="tabular">{formatPublishLabel(station.publishTimeISO)} 發布</span>
-                <span aria-hidden="true">·</span>
-                <span>{station.hasFutureTimestamp ? '時間戳異常' : formatHours(station.hoursSinceUpdate)}</span>
-              </p>
+              <p className="mt-2 text-lg font-bold sm:text-xl">{official ? station.category.label : '展示資料'}</p>
+              <div className="mt-2">
+                <FreshnessLabel
+                  publishTimeISO={station.publishTimeISO}
+                  hoursSinceUpdate={station.hoursSinceUpdate}
+                  hasFutureTimestamp={station.hasFutureTimestamp}
+                />
+              </div>
             </div>
           </div>
 
@@ -92,6 +95,9 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
           <div className="mt-4">
             <AqiScale aqi={canAdvise ? station.aqi : null} />
           </div>
+          <div className="mt-4">
+            <OfficialSourceNote tier={tier} />
+          </div>
         </div>
 
         <div className="space-y-4 lg:col-span-5">
@@ -99,14 +105,26 @@ export function StationHero({ dataset, station, isDefault, picker }: StationHero
             <>
               <Advice icon={<Users aria-hidden="true" className="h-4 w-4" />} title="一般民眾" text={station.category.advice.general} />
               <Advice icon={<HeartPulse aria-hidden="true" className="h-4 w-4" />} title="敏感族群" text={station.category.advice.sensitive} />
+              {tier === 'old' && <p className="text-sm text-muted">這筆資料已超過 6 小時，以環境部最新數據為準。</p>}
             </>
           ) : (
-            <div className="rounded-control bg-warnbg p-4 text-base text-warn">
-              <p className="flex items-center gap-2 font-bold">
+            <div className="rounded-control bg-sunken p-4 text-base">
+              <p className="flex items-center gap-2 font-bold text-warn">
                 <Info aria-hidden="true" className="h-4 w-4" />
-                現在建議已暫停
+                活動建議需要較新的資料
               </p>
-              <p className="mt-1">這筆資料超過 3 小時或時間異常，只保留供查核。請以環境部監測網的即時資料為準。</p>
+              <p className="mt-1 text-muted">
+                {official
+                  ? station.hasFutureTimestamp
+                    ? '這筆資料的發布時間異常，暫不提供活動建議。'
+                    : '這是 24 小時前的資料，不適合判斷現在的活動。'
+                  : '這是展示資料，不提供活動建議。'}
+                最新數據請見
+                <a className="font-semibold text-accent underline underline-offset-2" href={OFFICIAL_MONITOR_URL} target="_blank" rel="noreferrer">
+                  環境部空氣品質監測網
+                </a>
+                。
+              </p>
             </div>
           )}
 

@@ -105,3 +105,15 @@ Reason: Production was previously built from `codex/unified-visual-refresh` thro
 Decision: The first screen always shows one station's AQI as the page's single focal point: 96px on desktop and 64px on mobile, inside a category-coloured tile. Until the visitor picks a station, the tile shows a labelled default (臺北市中山, the first available major-city quick pick). Font sizes are restricted to 12/14/16/18/22/28/36/48/64/96 by overriding Tailwind's `fontSize`, spacing follows the 8pt scale, and every card shares one container edge and one padding value.
 
 Reason: Visitors reported "no focal point, nothing aligned, text too small". The audit backed this up: 71% of the text was 12px, the largest first-screen text was a 24px tagline, and blocks used five different left edges. The default is labelled and makes no "nearest station" claim, so it keeps the earlier no-geolocation rule. Measured benchmarks are in `docs/design-research.md` section 8, and the before/after evidence is in `docs/visual-audit.md`.
+
+## 2026-10-23 - Three-tier Freshness Labels (Supersedes the 3-hour Stale Gate)
+
+Decision: Freshness is labelled next to the reading, not with a top banner. The browser computes it from the MOENV publish time:
+- **Live**: ≤ 90 minutes. Neutral label.
+- **Aging**: ≤ 6 hours. Amber label; colour and advice unchanged.
+- **Old**: ≤ 24 hours. Amber label, plus a line pointing to the official monitor; advice adds "以環境部最新數據為準".
+- **Unusable**: > 24 hours, or an invalid time. The station drops out of the national summary and gets no advice. Its number is still shown, and the top note appears only when every station is in this state.
+
+If the network or JSON fails, the page shows the last cache that loaded successfully in this browser. The deploy cron asks for three staggered slots an hour.
+
+Reason: GitHub's schedule is best effort. The real gaps between runs were 3–4 hours, so the old 3-hour gate greyed out the AQI and showed a warning banner for most of the day, even though the data was a normal hourly MOENV reading only a few hours old. The deploy-time cache contract still refuses data that is more than 3 hours old when fetched, so a fresh deploy never ships an old snapshot.
