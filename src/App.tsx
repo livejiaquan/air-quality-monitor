@@ -5,6 +5,7 @@ import { Overview } from './components/Overview';
 import { SiteHeader } from './components/SiteHeader';
 import { ErrorPanel, LoadingDashboard } from './components/StatePanels';
 import { StationHero } from './components/StationHero';
+import { Rankings } from './components/Rankings';
 import { MapLegend, StationList } from './components/StationList';
 import { QuickPicks, StationPicker } from './components/StationPicker';
 import { recomputeAqiDatasetFreshness, type AqiDataset, type AqiStationRecord } from './lib/aqi';
@@ -144,7 +145,6 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
     const saved = readSavedStationId();
     return saved && records.some((record) => record.siteId === saved) ? saved : null;
   });
-  const [mobileView, setMobileView] = useState<'map' | 'list'>('map');
   const heroRef = useRef<HTMLDivElement>(null);
   const isOfficialSource = dataset.source.kind === 'official-cache';
   const pickedStation = useMemo<AqiStationRecord | null>(
@@ -192,7 +192,7 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
   const revealStation = useCallback((station: AqiStationRecord) => selectStation(station, { reveal: true }), [selectStation]);
 
   return (
-    <main id="main-content" className="mx-auto max-w-[1200px] space-y-6 px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
+    <main id="main-content" className="mx-auto max-w-[1024px] space-y-6 px-4 pb-12 pt-6 sm:px-6 sm:pt-8">
       {statusMessages.length > 0 && (
         <section
           role="status"
@@ -213,55 +213,40 @@ function Dashboard({ dataset, refreshError }: DashboardProps) {
         </section>
       )}
 
-      <div ref={heroRef} className="scroll-mt-20">
-        {focalStation && (
-          <StationHero
-            dataset={dataset}
-            station={focalStation}
-            isDefault={!pickedStation}
-            picker={
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
-                <div className="lg:w-60 lg:shrink-0">
-                  <StationPicker stations={records} selected={pickedStation} onSelect={selectStation} canShowCurrent={isOfficialSource} />
-                </div>
-                <QuickPicks stations={records} onSelect={selectStation} canShowCurrent={isOfficialSource} />
-              </div>
-            }
-          />
-        )}
+      {/* Search row, after the IQAir city page: full-width search, then quick picks. */}
+      <div>
+        <StationPicker stations={records} selected={pickedStation} onSelect={selectStation} canShowCurrent={isOfficialSource} />
       </div>
 
-      <section aria-labelledby="map-heading" className="overflow-hidden rounded-card ring-1 ring-line bg-surface shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6">
-          <div>
-            <h2 id="map-heading" className="text-xl font-bold">全台測站</h2>
-            <p className="mt-1 text-sm text-muted">點地圖上的數字或列表中的測站，即可查看詳細資料。</p>
-          </div>
-          <div className="flex rounded-control bg-sunken p-1 text-base font-semibold lg:hidden" role="tablist" aria-label="切換地圖或列表">
-            {(['map', 'list'] as const).map((view) => (
-              <button
-                key={view}
-                type="button"
-                role="tab"
-                aria-selected={mobileView === view}
-                onClick={() => setMobileView(view)}
-                className={`h-11 rounded-lg px-6 transition ${mobileView === view ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
-              >
-                {view === 'map' ? '地圖' : '列表'}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-[minmax(0,1fr)] border-t border-line lg:h-[560px] lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className={`relative h-[62vh] max-h-[560px] min-h-[380px] lg:block lg:h-full lg:max-h-none ${mobileView === 'map' ? 'block' : 'hidden'}`}>
-            <AirMap stations={records} selectedId={focalStation?.siteId ?? null} canShowCurrent={isOfficialSource} onSelect={selectStation} />
-          </div>
-          <div className={`h-[62vh] max-h-[560px] min-h-[380px] border-line lg:block lg:h-full lg:max-h-none lg:border-l ${mobileView === 'list' ? 'block' : 'hidden'}`}>
-            <StationList stations={records} selectedId={focalStation?.siteId ?? null} canShowCurrent={isOfficialSource} onSelect={revealStation} />
-          </div>
+      <div ref={heroRef} className="scroll-mt-24 pt-2">
+        {focalStation && <StationHero dataset={dataset} station={focalStation} isDefault={!pickedStation} />}
+      </div>
+
+      <section aria-labelledby="map-heading" className="overflow-hidden rounded-card bg-surface ring-1 ring-line">
+        <h2 id="map-heading" className="sr-only">全台測站地圖，點地圖上的數字即可切換測站</h2>
+        <div className="relative h-[436px] sm:h-[456px]">
+          <AirMap stations={records} selectedId={focalStation?.siteId ?? null} canShowCurrent={isOfficialSource} onSelect={selectStation} />
         </div>
         <div className="border-t border-line p-4 sm:px-6">
           <MapLegend dimmed={!hasCurrentData} />
+        </div>
+      </section>
+
+      {hasCurrentData && <Rankings stations={currentRecords} onSelect={revealStation} />}
+
+      {/* Major-city shortcuts near the end, like IQAir's "most polluted city" chips. */}
+      <section aria-labelledby="quick-heading" className="space-y-2">
+        <h2 id="quick-heading" className="text-base font-bold">主要城市</h2>
+        <QuickPicks stations={records} onSelect={(station) => station && revealStation(station)} canShowCurrent={isOfficialSource} />
+      </section>
+
+      <section aria-labelledby="list-heading" className="overflow-hidden rounded-card bg-surface ring-1 ring-line">
+        <div className="p-4 pb-0 sm:p-6 sm:pb-0">
+          <h2 id="list-heading" className="text-base font-bold">所有測站</h2>
+          <p className="text-sm text-muted">依縣市篩選或搜尋站名，點選即可查看。</p>
+        </div>
+        <div className="h-[480px]">
+          <StationList stations={records} selectedId={focalStation?.siteId ?? null} canShowCurrent={isOfficialSource} onSelect={revealStation} />
         </div>
       </section>
 
